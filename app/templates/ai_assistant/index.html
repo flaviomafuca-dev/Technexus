@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}TechNexus AI — Consultor Empresarial{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-robot text-primary me-2"></i>TechNexus AI — Consultor Empresarial
+        </h4>
+        <p class="text-muted small mb-0">Assistente de inteligência artificial alimentado por dados reais da sua empresa</p>
+    </div>
+    <div>
+        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+            <i class="bi bi-shield-check me-1"></i> Dados Oficiais &bull; Moeda MZN (MT)
+        </span>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Coluna de Sugestões e Resumo de Dados -->
+    <div class="col-lg-4">
+        <div class="card card-table p-3 mb-3">
+            <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-chat-quote me-1"></i> Questões Frequentes</h6>
+            <div class="d-grid gap-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary text-start" onclick="setQuickQuestion('Qual é o lucro bruto e o resultado operacional deste mês?')">
+                    <i class="bi bi-cash-coin text-success me-1"></i> Qual é o lucro bruto deste mês?
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary text-start" onclick="setQuickQuestion('Como estão as despesas e quanto temos a pagar a fornecedores?')">
+                    <i class="bi bi-receipt text-danger me-1"></i> Como estão as despesas e contas a pagar?
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary text-start" onclick="setQuickQuestion('Temos produtos em rutura ou com stock abaixo do mínimo?')">
+                    <i class="bi bi-boxes text-warning me-1"></i> Produtos em stock crítico?
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary text-start" onclick="setQuickQuestion('Qual é o saldo total disponível em caixa e bancos e o total de dívidas a receber?')">
+                    <i class="bi bi-wallet2 text-info me-1"></i> Saldo em caixa e dívidas de clientes?
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary text-start" onclick="setQuickQuestion('Faz-me um resumo executivo com recomendações para melhorar a rentabilidade.')">
+                    <i class="bi bi-lightbulb text-primary me-1"></i> Resumo executivo e recomendações
+                </button>
+            </div>
+        </div>
+
+        <div class="card card-table p-3">
+            <h6 class="fw-bold mb-2 text-dark"><i class="bi bi-cpu text-primary me-1"></i> Métricas em Tempo Real</h6>
+            <small class="text-muted d-block mb-3">Contexto operacional consultado pelo assistente</small>
+
+            <ul class="list-group list-group-flush small">
+                <li class="list-group-item px-0 d-flex justify-content-between">
+                    <span class="text-muted">Faturação Mês:</span>
+                    <strong class="text-dark">{{ context.mes_atual.faturacao_total }}</strong>
+                </li>
+                <li class="list-group-item px-0 d-flex justify-content-between">
+                    <span class="text-muted">Lucro Bruto:</span>
+                    <strong class="text-success">{{ context.mes_atual.lucro_bruto }}</strong>
+                </li>
+                <li class="list-group-item px-0 d-flex justify-content-between">
+                    <span class="text-muted">Despesas Operacionais:</span>
+                    <strong class="text-danger">{{ context.mes_atual.despesas_operacionais }}</strong>
+                </li>
+                <li class="list-group-item px-0 d-flex justify-content-between">
+                    <span class="text-muted">Saldo em Caixa / Bancos:</span>
+                    <strong class="text-primary">{{ context.posicao_financeira_e_dividas.saldo_disponivel_caixa }}</strong>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Coluna de Conversação (Chat) -->
+    <div class="col-lg-8">
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <!-- Boas-vindas -->
+                <div class="chat-bubble assistant">
+                    <strong><i class="bi bi-robot text-primary me-1"></i> TechNexus AI:</strong><br>
+                    Olá! Sou o seu Consultor Empresarial Inteligente. Analiso as finanças, vendas, inventário e assistência técnica da empresa para ajudá-lo a tomar decisões rigorosas.<br><br>
+                    Como posso ser útil hoje? Pode clicar numa das sugestões ao lado ou escrever a sua pergunta abaixo.
+                </div>
+
+                <!-- Histórico gravado -->
+                {% for conv in history %}
+                <div class="chat-bubble {{ conv.role }}">
+                    <strong>{{ "Você" if conv.role == 'user' else "TechNexus AI" }}:</strong><br>
+                    {{ conv.message | replace('\n', '<br>') | safe }}
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Entrada de Mensagem -->
+            <div class="chat-input-area">
+                <form onsubmit="handleSend(event)" class="d-flex gap-2">
+                    <input type="text" id="aiQuestionInput" class="form-control" placeholder="Pergunte sobre lucros, stock, clientes, despesas ou decisões do negócio..." autocomplete="off">
+                    <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                        <i class="bi bi-send-fill me-1"></i> Perguntar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function setQuickQuestion(q) {
+    document.getElementById('aiQuestionInput').value = q;
+    sendAIMessage('aiQuestionInput', 'chatMessages');
+}
+
+function handleSend(e) {
+    e.preventDefault();
+    sendAIMessage('aiQuestionInput', 'chatMessages');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Produtos Informáticos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Catálogo de Produtos & Materiais</h4>
+        <p class="text-muted small mb-0">Gestão de equipamentos, preços, margens e stock físico</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('products.categories') }}" class="btn btn-outline-secondary btn-sm">Categorias</a>
+        <a href="{{ url_for('products.brands') }}" class="btn btn-outline-secondary btn-sm">Marcas</a>
+        <a href="{{ url_for('products.create') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> Novo Produto
+        </a>
+    </div>
+</div>
+
+<!-- Filtros de Pesquisa -->
+<div class="card card-table p-3 mb-4">
+    <form method="GET" action="{{ url_for('products.index') }}" class="row g-2 align-items-center">
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" name="q" value="{{ query_str }}" placeholder="Pesquisar por SKU, nome ou modelo...">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select name="category_id" class="form-select">
+                <option value="">Todas as Categorias</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="stock_status" class="form-select">
+                <option value="">Todos os Estados de Stock</option>
+                <option value="low" {% if stock_status == 'low' %}selected{% endif %}>Stock Baixo (Abaixo do Mínimo)</option>
+                <option value="out" {% if stock_status == 'out' %}selected{% endif %}>Stock Esgotado (Zero)</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-secondary w-100"><i class="bi bi-funnel me-1"></i> Filtrar</button>
+        </div>
+    </form>
+</div>
+
+<!-- Tabela de Produtos -->
+<div class="card card-table">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Produto / Descrição</th>
+                    <th>Categoria</th>
+                    <th>Stock Atual</th>
+                    <th>Preço Venda</th>
+                    {% if is_admin %}
+                    <th>Custo Médio</th>
+                    <th>Margem Bruta</th>
+                    {% endif %}
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in pagination.items %}
+                <tr>
+                    <td class="fw-bold"><span class="badge bg-light text-dark border">{{ p.sku }}</span></td>
+                    <td>
+                        <a href="{{ url_for('products.view', product_id=p.id) }}" class="fw-semibold text-decoration-none text-dark">
+                            {{ p.name }}
+                        </a>
+                        {% if p.model %}<small class="text-muted d-block">{{ p.model }}</small>{% endif %}
+                        {% if p.is_selling_below_cost %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle small mt-1">
+                            <i class="bi bi-exclamation-octagon me-1"></i> Preço abaixo do custo
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>{{ p.category.name if p.category else "—" }}</td>
+                    <td>
+                        {% if p.is_out_of_stock %}
+                        <span class="badge bg-danger">Esgotado (0)</span>
+                        {% elif p.is_below_minimum_stock %}
+                        <span class="badge bg-warning text-dark">{{ p.stock_quantity | numero(0) }} / Min: {{ p.minimum_stock | numero(0) }}</span>
+                        {% else %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">{{ p.stock_quantity | numero(0) }} {{ p.unit }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="fw-bold">{{ p.selling_price | moeda }}</td>
+                    {% if is_admin %}
+                    <td class="text-muted">{{ p.average_cost | moeda }}</td>
+                    <td>
+                        {% if p.gross_margin_percent is not none %}
+                            <span class="{% if p.gross_margin_percent > 20 %}text-success{% elif p.gross_margin_percent > 0 %}text-warning{% else %}text-danger{% endif %} fw-semibold">
+                                {{ p.gross_margin_percent | percentagem }}
+                            </span>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                    <td class="text-end">
+                        <a href="{{ url_for('products.view', product_id=p.id) }}" class="btn btn-sm btn-outline-secondary" title="Ver Detalhes">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{{ url_for('products.edit', product_id=p.id) }}" class="btn btn-sm btn-outline-primary" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="{% if is_admin %}8{% else %}6{% endif %}" class="empty-state py-5">
+                        <i class="bi bi-box-seam display-4 d-block mb-2"></i>
+                        <h5>Nenhum produto encontrado</h5>
+                        <p class="small text-muted mb-3">Não existem produtos que correspondam aos filtros de pesquisa selecionados.</p>
+                        <a href="{{ url_for('products.create') }}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-plus-lg me-1"></i> Cadastrar Primeiro Produto
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginação -->
+    {% if pagination.pages > 1 %}
+    <div class="p-3 border-top d-flex justify-content-between align-items-center">
+        <small class="text-muted">Página {{ pagination.page }} de {{ pagination.pages }} (Total: {{ pagination.total }} produtos)</small>
+        <ul class="pagination pagination-sm mb-0">
+            {% if pagination.has_prev %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('products.index', page=pagination.prev_num, q=query_str, category_id=category_id, stock_status=stock_status) }}">&laquo;</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ pagination.page }}</span></li>
+            {% if pagination.has_next %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('products.index', page=pagination.next_num, q=query_str, category_id=category_id, stock_status=stock_status) }}">&raquo;</a></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

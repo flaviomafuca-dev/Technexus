@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Contas a Receber{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Contas a Receber (Dívidas de Clientes)</h4>
+        <p class="text-muted small mb-0">Acompanhamento de faturas a crédito e prazos de cobrança</p>
+    </div>
+    <a href="{{ url_for('finance.index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Voltar às Finanças
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="kpi-card">
+            <div class="kpi-title">Total a Receber</div>
+            <div class="kpi-value text-primary">{{ summary.total | moeda }}</div>
+            <div class="kpi-meta text-muted">Total de saldos pendentes</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="kpi-card">
+            <div class="kpi-title">Valores Vencidos (Em Atraso)</div>
+            <div class="kpi-value text-danger">{{ summary.overdue | moeda }}</div>
+            <div class="kpi-meta text-danger">Data de vencimento ultrapassada</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="kpi-card">
+            <div class="kpi-title">Valores a Vencer (Dentro do Prazo)</div>
+            <div class="kpi-value text-success">{{ summary.current | moeda }}</div>
+            <div class="kpi-meta text-muted">Prazos regulares</div>
+        </div>
+    </div>
+</div>
+
+<div class="card card-table">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Nº Venda</th>
+                    <th>Data Emissão</th>
+                    <th>Data Vencimento</th>
+                    <th>Cliente</th>
+                    <th>Contacto</th>
+                    <th>Total Fatura</th>
+                    <th>Pago</th>
+                    <th>Saldo em Dívida</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in pending_sales %}
+                <tr class="{% if s.is_overdue %}table-danger-subtle{% endif %}">
+                    <td><a href="{{ url_for('sales.view', sale_id=s.id) }}" class="fw-bold text-decoration-none">{{ s.sale_number }}</a></td>
+                    <td>{{ s.sale_date | data }}</td>
+                    <td>
+                        {{ s.due_date | data if s.due_date else "Sem data fixa" }}
+                        {% if s.is_overdue %}<span class="badge bg-danger ms-1">Vencido</span>{% endif %}
+                    </td>
+                    <td class="fw-semibold">{{ s.customer.name }}</td>
+                    <td>{{ s.customer.phone or "—" }}</td>
+                    <td>{{ s.total_amount | moeda }}</td>
+                    <td>{{ s.paid_amount | moeda }}</td>
+                    <td class="fw-bold text-danger">{{ s.pending_amount | moeda }}</td>
+                    <td class="text-end">
+                        <a href="{{ url_for('sales.view', sale_id=s.id) }}" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-cash me-1"></i> Cobrar
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="empty-state py-4">
+                        <i class="bi bi-check-circle text-success fs-1"></i>
+                        <p class="small text-muted mt-2">Excelente! Não existem clientes com faturas pendentes de pagamento.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

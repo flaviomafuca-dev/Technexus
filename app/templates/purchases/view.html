@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Compra {{ purchase.purchase_number }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Compra {{ purchase.purchase_number }}</h4>
+        <p class="text-muted small mb-0">Fornecedor: <strong>{{ purchase.supplier.name }}</strong> &bull; Data: <strong>{{ purchase.purchase_date | data }}</strong></p>
+    </div>
+    <div class="d-flex gap-2">
+        {% if not purchase.stock_updated and purchase.status != 'cancelled' %}
+        <form method="POST" action="{{ url_for('purchases.receive', purchase_id=purchase.id) }}" onsubmit="return confirm('Confirmar que todos os artigos foram descarregados e conferidos em armazém? O stock será imediatamente atualizado.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="bi bi-box-arrow-in-down me-1"></i> Receber Mercadoria (Dar Entrada no Stock)
+            </button>
+        </form>
+        {% endif %}
+
+        {% if purchase.pending_amount > 0 and purchase.status != 'cancelled' %}
+        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#paySupplierModal">
+            <i class="bi bi-cash me-1"></i> Pagar ao Fornecedor
+        </button>
+        {% endif %}
+
+        <a href="{{ url_for('purchases.index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Total da Compra</div>
+            <div class="kpi-value text-primary">{{ purchase.total_amount | moeda }}</div>
+            <div class="kpi-meta text-muted">Documento: {{ purchase.supplier_document or "N/D" }}</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Valor Liquidado</div>
+            <div class="kpi-value text-success">{{ purchase.paid_amount | moeda }}</div>
+            <div class="kpi-meta text-muted">Pago ao fornecedor</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Saldo Pendente (A Pagar)</div>
+            <div class="kpi-value {% if purchase.pending_amount > 0 %}text-danger{% else %}text-muted{% endif %}">
+                {{ purchase.pending_amount | moeda }}
+            </div>
+            <div class="kpi-meta text-muted">Vencimento: {{ purchase.due_date | data if purchase.due_date else "Pronto Pagamento" }}</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Entrada em Stock</div>
+            <div class="mt-2">
+                {% if purchase.stock_updated %}
+                <span class="badge bg-success fs-6"><i class="bi bi-check-circle"></i> Stock Atualizado</span>
+                {% else %}
+                <span class="badge bg-warning text-dark fs-6"><i class="bi bi-hourglass-split"></i> Aguarda Descarga</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card card-table p-4 mb-4">
+    <h6 class="fw-bold mb-3">Artigos Constantes na Compra</h6>
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th>Artigo</th>
+                    <th class="text-center" style="width: 15%;">Quantidade</th>
+                    <th class="text-end" style="width: 20%;">Custo Unitário</th>
+                    <th class="text-end" style="width: 20%;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in purchase.items %}
+                <tr>
+                    <td>
+                        <span class="fw-semibold">{{ item.description }}</span>
+                    </td>
+                    <td class="text-center">{{ item.quantity | numero(0) }}</td>
+                    <td class="text-end">{{ item.unit_price | moeda }}</td>
+                    <td class="text-end fw-bold">{{ item.line_total | moeda }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                {% if purchase.shipping_cost > 0 %}
+                <tr>
+                    <td colspan="3" class="text-end text-muted">Despesas de Transporte:</td>
+                    <td class="text-end fw-semibold">{{ purchase.shipping_cost | moeda }}</td>
+                </tr>
+                {% endif %}
+                <tr class="table-active fs-6">
+                    <td colspan="3" class="text-end fw-bold">TOTAL DA OBRIGAÇÃO:</td>
+                    <td class="text-end fw-bold text-primary">{{ purchase.total_amount | moeda }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    {% if purchase.notes %}
+    <div class="p-2 border rounded bg-light small text-muted">
+        <strong>Notas:</strong> {{ purchase.notes }}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para Pagamento ao Fornecedor -->
+<div class="modal fade" id="paySupplierModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('purchases.add_payment', purchase_id=purchase.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fs-6 fw-bold">Registar Pagamento a Fornecedor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Valor a Pagar (MT) *</label>
+                        <input type="number" step="0.01" min="0.01" max="{{ purchase.pending_amount }}" class="form-control" name="amount" required value="{{ purchase.pending_amount }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Conta de Saída *</label>
+                        <select name="account_id" class="form-select" required>
+                            {% for a in accounts %}
+                            <option value="{{ a.id }}">{{ a.name }} (Saldo: {{ a.get_current_balance() | moeda }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Método *</label>
+                        <select name="payment_method" class="form-select">
+                            <option value="bank_transfer">Transferência Bancária</option>
+                            <option value="cash">Caixa em Dinheiro</option>
+                            <option value="mpesa">M-Pesa</option>
+                            <option value="emola">e-Mola</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Número de Transação / Comprovativo</label>
+                        <input type="text" class="form-control" name="reference" placeholder="ex: Comprovativo Bancário nº 12345">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success btn-sm">Processar Pagamento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

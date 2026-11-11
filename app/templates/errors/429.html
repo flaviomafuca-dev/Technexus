@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Demasiados Pedidos (429){% endblock %}
+
+{% block content %}
+<div class="card card-table py-5 text-center my-4">
+    <div class="card-body">
+        <i class="bi bi-hourglass-split text-warning display-1"></i>
+        <h2 class="mt-3 fw-bold">Limite de Pedidos Excedido (429)</h2>
+        <p class="text-muted">Foram enviados demasiados pedidos num curto intervalo de tempo por motivos de proteção do servidor.</p>
+        <p class="text-muted small">Por favor, aguarda alguns momentos e tenta novamente.</p>
+        <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary mt-2">
+            <i class="bi bi-arrow-clockwise me-1"></i> Atualizar Página
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Orçamentos Comerciais{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Orçamentos & Propostas Comerciais</h4>
+        <p class="text-muted small mb-0">Emissão de propostas com conversão direta em venda após aprovação do cliente</p>
+    </div>
+    <a href="{{ url_for('sales.create_quote') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-file-earmark-plus me-1"></i> Novo Orçamento
+    </a>
+</div>
+
+<div class="card card-table">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Nº Orçamento</th>
+                    <th>Data Emissão</th>
+                    <th>Validade</th>
+                    <th>Cliente</th>
+                    <th>Total (MT)</th>
+                    <th>Estado</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for q in quotes %}
+                <tr>
+                    <td><a href="{{ url_for('sales.view_quote', quote_id=q.id) }}" class="fw-bold text-decoration-none">{{ q.sale_number }}</a></td>
+                    <td>{{ q.sale_date | data }}</td>
+                    <td>{{ q.quote_expires_at | data if q.quote_expires_at else "30 dias" }}</td>
+                    <td>{{ q.customer.name if q.customer else "Consumidor Final" }}</td>
+                    <td class="fw-bold">{{ q.total_amount | moeda }}</td>
+                    <td>
+                        <span class="badge-status badge-{{ q.status }}">
+                            {% if q.status == 'draft' %}Pendente / Aguarda Resposta{% elif q.status == 'converted' %}Aprovado & Faturado{% elif q.status == 'cancelled' %}Cancelado{% else %}{{ q.status }}{% endif %}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('sales.view_quote', quote_id=q.id) }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="empty-state py-4">
+                        <i class="bi bi-file-earmark-text fs-1"></i>
+                        <p class="small text-muted mt-2">Nenhum orçamento emitido no momento.</p>
+                        <a href="{{ url_for('sales.create_quote') }}" class="btn btn-primary btn-sm">Criar Primeiro Orçamento</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

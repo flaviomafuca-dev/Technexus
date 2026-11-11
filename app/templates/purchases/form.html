@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Nova Compra a Fornecedor{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="fw-bold mb-0 text-dark">Registar Ordem de Compra</h4>
+        <p class="text-muted small mb-0">Atenção: Os produtos apenas entram fisicamente em stock após a confirmação da receção da mercadoria</p>
+    </div>
+    <a href="{{ url_for('purchases.index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Voltar
+    </a>
+</div>
+
+<form method="POST" action="{{ url_for('purchases.create') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card card-table p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0 text-primary">Produtos Adquiridos</h6>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="addRowBtn">
+                        <i class="bi bi-plus-lg me-1"></i> Adicionar Linha
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Produto</th>
+                                <th style="width: 20%;">Quantidade</th>
+                                <th style="width: 25%;">Custo Unitário (MT)</th>
+                                <th style="width: 5%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsBody">
+                            <tr>
+                                <td>
+                                    <select name="product_id[]" class="form-select product-select" required onchange="updatePurchaseCost(this)">
+                                        <option value="">Selecione o artigo...</option>
+                                        {% for p in products %}
+                                        <option value="{{ p.id }}" data-cost="{{ p.purchase_price }}">{{ p.name }} ({{ p.sku }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td><input type="number" step="1" min="1" name="quantity[]" class="form-control" value="1" required></td>
+                                <td><input type="number" step="0.01" min="0" name="unit_price[]" class="form-control cost-input" value="0.00" required></td>
+                                <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card card-table p-3">
+                <label class="form-label small fw-semibold">Observações da Compra</label>
+                <textarea class="form-control" name="notes" rows="2" placeholder="Local de entrega, pessoa que recebeu a encomenda..."></textarea>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card card-table p-3">
+                <h6 class="fw-bold mb-3 text-primary">Dados do Fornecedor</h6>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Fornecedor *</label>
+                    <select name="supplier_id" class="form-select" required>
+                        <option value="">Selecione o fornecedor...</option>
+                        {% for s in suppliers %}
+                        <option value="{{ s.id }}">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Nº da Fatura / Guia do Fornecedor</label>
+                    <input type="text" class="form-control" name="supplier_document" placeholder="ex: FT 2024/0981">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Data Limite de Pagamento</label>
+                    <input type="date" class="form-control" name="due_date">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Custo de Transporte / Despacho (MT)</label>
+                    <input type="number" step="0.01" min="0" class="form-control" name="shipping_cost" value="0.00">
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold mt-2">
+                    <i class="bi bi-check2-circle me-1"></i> Registar & Confirmar Compra
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function updatePurchaseCost(sel) {
+    const opt = sel.options[sel.selectedIndex];
+    const cost = opt.getAttribute('data-cost') || '0.00';
+    sel.closest('tr').querySelector('.cost-input').value = parseFloat(cost).toFixed(2);
+}
+
+document.getElementById('addRowBtn').addEventListener('click', function () {
+    const firstRow = document.querySelector('#itemsBody tr');
+    const clone = firstRow.cloneNode(true);
+    clone.querySelector('.product-select').selectedIndex = 0;
+    clone.querySelector('.cost-input').value = '0.00';
+    document.getElementById('itemsBody').appendChild(clone);
+});
+</script>
+{% endblock %}

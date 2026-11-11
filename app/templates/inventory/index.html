@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Inventário & Stock{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Gestão de Stock & Inventário Físico</h4>
+        <p class="text-muted small mb-0">Valorização global do stock ao Custo Médio Ponderado e controlo de reposição</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('inventory.movements') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-clock-history me-1"></i> Movimentações
+        </a>
+        {% if is_admin %}
+        <a href="{{ url_for('inventory.adjust') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-sliders me-1"></i> Ajuste de Inventário
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Cartões de Valorização de Stock -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Unidades Físicas em Armazém</div>
+            <div class="kpi-value text-primary">{{ total_units | numero(0) }}</div>
+            <div class="kpi-meta text-muted">Total de unidades catalogadas</div>
+        </div>
+    </div>
+    {% if is_admin %}
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Valor do Stock ao Custo Médio</div>
+            <div class="kpi-value text-secondary">{{ total_cost_value | moeda }}</div>
+            <div class="kpi-meta text-muted">Capital imobilizado em mercadorias</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Valor Estimado de Venda</div>
+            <div class="kpi-value text-success">{{ total_sale_value | moeda }}</div>
+            <div class="kpi-meta text-muted">Receita potencial em armazém</div>
+        </div>
+    </div>
+    {% endif %}
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Produtos em Alerta Crítico</div>
+            <div class="kpi-value text-danger">{{ low_stock | length }}</div>
+            <div class="kpi-meta text-danger">Abaixo do stock de segurança</div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabela de Inventário -->
+<div class="card card-table">
+    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0">Posição Atual de Artigos em Armazém</h6>
+        <span class="badge bg-light text-dark border">{{ products | length }} artigos</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Designação do Produto</th>
+                    <th>Saldo Atual</th>
+                    <th>Mínimo</th>
+                    <th>Preço Venda</th>
+                    {% if is_admin %}
+                    <th>Custo Médio</th>
+                    <th>Valorização Total</th>
+                    {% endif %}
+                    <th class="text-end">Ações Rápidas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td class="font-monospace fw-semibold">{{ p.sku }}</td>
+                    <td>
+                        <a href="{{ url_for('products.view', product_id=p.id) }}" class="fw-semibold text-dark text-decoration-none">
+                            {{ p.name }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if p.is_out_of_stock %}
+                        <span class="badge bg-danger">Esgotado (0)</span>
+                        {% elif p.is_below_minimum_stock %}
+                        <span class="badge bg-warning text-dark">{{ p.stock_quantity | numero(0) }}</span>
+                        {% else %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">{{ p.stock_quantity | numero(0) }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted">{{ p.minimum_stock | numero(0) }}</td>
+                    <td class="fw-bold">{{ p.selling_price | moeda }}</td>
+                    {% if is_admin %}
+                    <td class="text-muted">{{ p.average_cost | moeda }}</td>
+                    <td class="fw-semibold">{{ (p.stock_quantity * p.average_cost) | moeda }}</td>
+                    {% endif %}
+                    <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#damagedModal{{ p.id }}" title="Registar Avaria">
+                            <i class="bi bi-exclamation-triangle"></i> Avaria
+                        </button>
+                    </td>
+                </tr>
+
+                <!-- Modal de Registo de Avaria -->
+                <div class="modal fade" id="damagedModal{{ p.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form method="POST" action="{{ url_for('inventory.damaged') }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="product_id" value="{{ p.id }}">
+                                <div class="modal-header">
+                                    <h5 class="modal-title fs-6 fw-bold">Registar Artigo Danificado / Quebra</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="small text-muted mb-3">O registo de avaria deduz as unidades fisicamente danificadas do stock com justificação e auditoria.</p>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold">Produto</label>
+                                        <input type="text" class="form-control" value="{{ p.name }}" readonly>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold">Quantidade Danificada *</label>
+                                        <input type="number" step="1" min="1" max="{{ p.stock_quantity | int }}" class="form-control" name="quantity" required value="1">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold">Motivo / Causa da Avaria *</label>
+                                        <textarea class="form-control" name="reason" rows="2" required placeholder="ex: Ecrã partido no transporte, queima por pico de tensão..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-danger btn-sm">Confirmar Baixa por Avaria</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <tr>
+                    <td colspan="{% if is_admin %}8{% else %}6{% endif %}" class="empty-state py-4">
+                        <i class="bi bi-boxes fs-1"></i>
+                        <p class="small text-muted mt-2">Nenhum artigo registado no inventário.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

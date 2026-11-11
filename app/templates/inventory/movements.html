@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Histórico de Movimentações de Stock{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Histórico Geral de Movimentações de Stock</h4>
+        <p class="text-muted small mb-0">Rastreio auditável de todas as entradas, saídas, vendas e ajustes físicos</p>
+    </div>
+    <a href="{{ url_for('inventory.index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Voltar ao Inventário
+    </a>
+</div>
+
+<!-- Filtros -->
+<div class="card card-table p-3 mb-4">
+    <form method="GET" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <select name="product_id" class="form-select">
+                <option value="">Todos os Artigos</option>
+                {% for p in products %}
+                <option value="{{ p.id }}" {% if selected_product_id == p.id %}selected{% endif %}>{{ p.name }} ({{ p.sku }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-5">
+            <select name="type" class="form-select">
+                <option value="">Todos os Tipos de Movimento</option>
+                <option value="purchase_in" {% if selected_type == 'purchase_in' %}selected{% endif %}>Entrada por Compra (Fornecedor)</option>
+                <option value="sale_out" {% if selected_type == 'sale_out' %}selected{% endif %}>Saída por Venda</option>
+                <option value="service_out" {% if selected_type == 'service_out' %}selected{% endif %}>Saída para Ordem de Serviço</option>
+                <option value="adjustment_in" {% if selected_type == 'adjustment_in' %}selected{% endif %}>Ajuste Positivo (Contagem)</option>
+                <option value="adjustment_out" {% if selected_type == 'adjustment_out' %}selected{% endif %}>Ajuste Negativo (Contagem)</option>
+                <option value="damaged" {% if selected_type == 'damaged' %}selected{% endif %}>Produto Danificado (Avaria)</option>
+                <option value="return_in" {% if selected_type == 'return_in' %}selected{% endif %}>Entrada por Devolução</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-secondary w-100"><i class="bi bi-funnel me-1"></i> Filtrar</button>
+        </div>
+    </form>
+</div>
+
+<!-- Tabela de Movimentos -->
+<div class="card card-table">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Data/Hora</th>
+                    <th>Artigo</th>
+                    <th>Operação</th>
+                    <th>Quantidade</th>
+                    <th>Saldo Anterior</th>
+                    <th>Saldo Novo</th>
+                    <th>Custo Unit. (MT)</th>
+                    <th>Justificação / Detalhes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in pagination.items %}
+                <tr>
+                    <td class="small">{{ m.created_at | data_hora }}</td>
+                    <td class="fw-semibold">{{ m.product.name }} <small class="text-muted">({{ m.product.sku }})</small></td>
+                    <td>
+                        <span class="badge-status badge-{{ m.movement_type }}">
+                            {{ m.movement_type | upper }}
+                        </span>
+                    </td>
+                    <td class="fw-bold">{{ m.quantity | numero(0) }}</td>
+                    <td class="text-muted">{{ m.stock_before | numero(0) }}</td>
+                    <td class="fw-bold">{{ m.stock_after | numero(0) }}</td>
+                    <td>{{ m.unit_cost | moeda }}</td>
+                    <td class="small text-muted">{{ m.reason or "—" }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">Nenhum movimento encontrado com os filtros aplicados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <div class="p-3 border-top d-flex justify-content-between align-items-center">
+        <small class="text-muted">Página {{ pagination.page }} de {{ pagination.pages }}</small>
+        <ul class="pagination pagination-sm mb-0">
+            {% if pagination.has_prev %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('inventory.movements', page=pagination.prev_num, product_id=selected_product_id, type=selected_type) }}">&laquo;</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ pagination.page }}</span></li>
+            {% if pagination.has_next %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('inventory.movements', page=pagination.next_num, product_id=selected_product_id, type=selected_type) }}">&raquo;</a></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

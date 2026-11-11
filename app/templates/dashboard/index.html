@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Executivo{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Dashboard Executivo</h4>
+        <p class="text-muted small mb-0">
+            Período: <strong>{{ start_date | data }}</strong> a <strong>{{ end_date | data }}</strong> &bull; Moeda: <strong>MZN (MT)</strong>
+        </p>
+    </div>
+
+    <!-- Filtro de Períodos -->
+    <div class="btn-group shadow-sm" role="group">
+        <a href="{{ url_for('dashboard.index', period='today') }}" class="btn btn-sm btn-outline-secondary {% if period == 'today' %}active{% endif %}">Hoje</a>
+        <a href="{{ url_for('dashboard.index', period='week') }}" class="btn btn-sm btn-outline-secondary {% if period == 'week' %}active{% endif %}">7 Dias</a>
+        <a href="{{ url_for('dashboard.index', period='month') }}" class="btn btn-sm btn-outline-secondary {% if period == 'month' %}active{% endif %}">Mês Atual</a>
+        <a href="{{ url_for('dashboard.index', period='last_month') }}" class="btn btn-sm btn-outline-secondary {% if period == 'last_month' %}active{% endif %}">Mês Anterior</a>
+        <a href="{{ url_for('dashboard.index', period='30days') }}" class="btn btn-sm btn-outline-secondary {% if period == '30days' %}active{% endif %}">30 Dias</a>
+    </div>
+</div>
+
+<!-- Recomendações Inteligentes TechNexus Intelligence (Apenas Admin) -->
+{% if is_admin and recommendations %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #1B365D 0%, #2A4D7E 100%); color: #ffffff;">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="bi bi-lightbulb-fill text-warning fs-4 me-2"></i>
+                    <h6 class="fw-bold mb-0 text-uppercase tracking-wider">TechNexus Intelligence — Recomendações Prioritárias</h6>
+                </div>
+                <div class="row g-3 mt-1">
+                    {% for rec in recommendations %}
+                    <div class="col-md-4">
+                        <div class="p-3 rounded bg-white text-dark h-100 shadow-sm">
+                            <span class="badge {% if rec.priority == 'critica' %}bg-danger{% elif rec.priority == 'alta' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} mb-2">
+                                {{ rec.priority | upper }}
+                            </span>
+                            <h6 class="fw-bold mb-1">{{ rec.title }}</h6>
+                            <p class="small text-muted mb-2">{{ rec.issue }}</p>
+                            <div class="small fw-semibold text-primary"><i class="bi bi-arrow-right-circle me-1"></i> {{ rec.recommended_action }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Linha 1 de Indicadores Principais -->
+<div class="row g-3 mb-4">
+    <!-- Faturação Total -->
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title"><i class="bi bi-graph-up text-primary me-1"></i> Faturação do Período</div>
+            <div class="kpi-value text-primary">{{ indicators.revenue | moeda }}</div>
+            <div class="kpi-meta">
+                {% if indicators.revenue_change_percent is not none %}
+                    {% if indicators.revenue_change_percent > 0 %}
+                    <span class="text-success fw-bold"><i class="bi bi-arrow-up-short"></i> +{{ indicators.revenue_change_percent | percentagem }}</span>
+                    {% elif indicators.revenue_change_percent < 0 %}
+                    <span class="text-danger fw-bold"><i class="bi bi-arrow-down-short"></i> {{ indicators.revenue_change_percent | percentagem }}</span>
+                    {% else %}
+                    <span class="text-muted">0%</span>
+                    {% endif %}
+                    <span class="text-muted">vs período anterior</span>
+                {% else %}
+                    <span class="text-muted">Receita reconhecida</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Lucro Bruto (Apenas Admin) ou Vendas Realizadas (Gerente) -->
+    {% if is_admin %}
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title"><i class="bi bi-piggy-bank text-success me-1"></i> Lucro Bruto Real</div>
+            <div class="kpi-value text-success">{{ indicators.gross_profit | moeda }}</div>
+            <div class="kpi-meta">
+                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                    Margem: {{ indicators.gross_margin_percent | percentagem if indicators.gross_margin_percent is not none else '0%' }}
+                </span>
+                <span class="text-muted ms-1">(Receita - CPV)</span>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title"><i class="bi bi-cart-check text-success me-1"></i> Vendas Concluídas</div>
+            <div class="kpi-value text-success">{{ indicators.sales_count }}</div>
+            <div class="kpi-meta text-muted">Operações comerciais no período</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Despesas Operacionais (Apenas Admin) ou Serviços Pendentes (Gerente) -->
+    {% if is_admin %}
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title"><i class="bi bi-receipt text-danger me-1"></i> Despesas Operacionais</div>
+            <div class="kpi-value text-danger">{{ indicators.operating_expenses | moeda }}</div>
+            <div class="kpi-meta text-muted">Renda, salários, energia, internet</div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title"><i class="bi bi-tools text-warning me-1"></i> Serviços em Aberto</div>
+            <div class="kpi-value text-warning">{{ indicators.pending_services }}</div>
+            <div class="kpi-meta text-muted">Reparações em diagnóstico / execução</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Saldo Disponível (Apenas Admin) ou Alertas de Stock (Gerente) -->
+    {% if is_admin %}
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title"><i class="bi bi-wallet2 text-info me-1"></i> Saldo Disponível</div>
+            <div class="kpi-value text-info">{{ cash_flow.final_balance | moeda }}</div>
+            <div class="kpi-meta text-muted">Caixa + Contas Bancárias + M-Pesa</div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title"><i class="bi bi-exclamation-triangle text-danger me-1"></i> Stock Baixo</div>
+            <div class="kpi-value text-danger">{{ indicators.low_stock_count }}</div>
+            <div class="kpi-meta text-muted">Produtos a necessitar de reposição</div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Linha 2 de Indicadores (Contas a Receber, a Pagar, etc.) -->
+{% if is_admin %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="p-3 bg-white border rounded shadow-sm">
+            <small class="text-muted text-uppercase fw-semibold">Contas a Receber (Clientes)</small>
+            <div class="fs-5 fw-bold text-dark mt-1">{{ indicators.accounts_receivable | moeda }}</div>
+            <small class="text-danger">Vencido: {{ indicators.accounts_receivable_overdue | moeda }}</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="p-3 bg-white border rounded shadow-sm">
+            <small class="text-muted text-uppercase fw-semibold">Contas a Pagar (Fornecedores)</small>
+            <div class="fs-5 fw-bold text-dark mt-1">{{ indicators.accounts_payable | moeda }}</div>
+            <small class="text-danger">Vencido: {{ indicators.accounts_payable_overdue | moeda }}</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="p-3 bg-white border rounded shadow-sm">
+            <small class="text-muted text-uppercase fw-semibold">Resultado Operacional Líquido</small>
+            <div class="fs-5 fw-bold mt-1 {% if indicators.operating_result >= 0 %}text-success{% else %}text-danger{% endif %}">
+                {{ indicators.operating_result | moeda }}
+            </div>
+            <small class="text-muted">Lucro Bruto - Despesas</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="p-3 bg-white border rounded shadow-sm">
+            <small class="text-muted text-uppercase fw-semibold">Stock Crítico / Esgotado</small>
+            <div class="fs-5 fw-bold text-danger mt-1">{{ indicators.low_stock_count }} produto(s)</div>
+            <small class="text-muted"><a href="{{ url_for('inventory.index') }}" class="text-decoration-none">Ver inventário &rarr;</a></small>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Gráficos Executivos (Chart.js) -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-8">
+        <div class="card card-table p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0"><i class="bi bi-bar-chart-line text-primary me-2"></i> Evolução Financeira Semestral</h6>
+                <small class="text-muted">Dados mensais consolidados</small>
+            </div>
+            <div style="height: 280px;">
+                <canvas id="financialChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertas Rápidos de Stock Baixo -->
+    <div class="col-lg-4">
+        <div class="card card-table p-3 h-100">
+            <h6 class="fw-bold mb-3"><i class="bi bi-shield-exclamation text-danger me-2"></i> Reposição Urgente</h6>
+            {% if low_stock_items %}
+            <div class="list-group list-group-flush">
+                {% for item in low_stock_items %}
+                <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-semibold small text-truncate" style="max-width: 200px;">{{ item.name }}</div>
+                        <small class="text-muted">SKU: {{ item.sku }}</small>
+                    </div>
+                    <span class="badge {% if item.is_out_of_stock %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                        {{ item.stock_quantity | numero(0) }} / {{ item.minimum_stock | numero(0) }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="mt-3 text-center">
+                <a href="{{ url_for('inventory.index') }}" class="btn btn-sm btn-outline-primary w-100">Consultar Stock Completo</a>
+            </div>
+            {% else %}
+            <div class="empty-state py-4">
+                <i class="bi bi-check-circle text-success fs-1"></i>
+                <p class="small text-muted mt-2 mb-0">Nenhum produto em rutura de stock no momento.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Tabelas de Operações Recentes -->
+<div class="row g-3">
+    <!-- Últimas Vendas -->
+    <div class="col-lg-6">
+        <div class="card card-table p-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0"><i class="bi bi-cart3 text-primary me-2"></i> Vendas Recentes</h6>
+                <a href="{{ url_for('sales.index') }}" class="btn btn-sm btn-outline-secondary">Ver Todas</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Nº</th>
+                            <th>Cliente</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in recent_sales %}
+                        <tr>
+                            <td><a href="{{ url_for('sales.view', sale_id=sale.id) }}" class="fw-bold text-decoration-none">{{ sale.sale_number }}</a></td>
+                            <td class="text-truncate" style="max-width: 140px;">{{ sale.customer.name if sale.customer else "Balcão" }}</td>
+                            <td class="fw-semibold">{{ sale.total_amount | moeda }}</td>
+                            <td>
+                                <span class="badge-status badge-{{ sale.status }}">
+                                    {% if sale.status == 'paid' %}Paga{% elif sale.status == 'partial' %}Parcial{% elif sale.status == 'confirmed' %}A Crédito{% else %}{{ sale.status }}{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-3">Ainda não existem vendas registadas.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ordens de Serviço Recentes -->
+    <div class="col-lg-6">
+        <div class="card card-table p-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0"><i class="bi bi-tools text-primary me-2"></i> Assistência Técnica Recente</h6>
+                <a href="{{ url_for('service_orders.index') }}" class="btn btn-sm btn-outline-secondary">Ver Todas</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Nº OS</th>
+                            <th>Equipamento</th>
+                            <th>Técnico</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_orders %}
+                        <tr>
+                            <td><a href="{{ url_for('service_orders.view', order_id=order.id) }}" class="fw-bold text-decoration-none">{{ order.order_number }}</a></td>
+                            <td>{{ order.equipment_type or "Geral" }}</td>
+                            <td>{{ order.technician.name if order.technician else "Não atribuído" }}</td>
+                            <td>
+                                <span class="badge-status badge-{{ order.status }}">
+                                    {{ order.status | capitalize }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-3">Nenhuma ordem de serviço registada.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    fetch('/api/charts')
+        .then(res => res.json())
+        .then(data => {
+            const ctx = document.getElementById('financialChart').getContext('2d');
+            const datasets = [
+                {
+                    label: 'Faturação (MT)',
+                    data: data.revenue,
+                    borderColor: '#1B365D',
+                    backgroundColor: 'rgba(27, 54, 93, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }
+            ];
+
+            if (data.can_view_profit) {
+                datasets.push({
+                    label: 'Lucro Bruto (MT)',
+                    data: data.profit,
+                    borderColor: '#10B981',
+                    backgroundColor: 'transparent',
+                    borderDash: [5, 5],
+                    tension: 0.3
+                });
+                datasets.push({
+                    label: 'Despesas (MT)',
+                    data: data.expenses,
+                    borderColor: '#EF4444',
+                    backgroundColor: 'transparent',
+                    tension: 0.3
+                });
+            }
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: val => val.toLocaleString('pt-MZ') + ' MT'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+});
+</script>
+{% endblock %}

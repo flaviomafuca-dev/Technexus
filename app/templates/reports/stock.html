@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Relatório de Stock{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Relatório de Inventário & Valorização</h4>
+        <p class="text-muted small mb-0">Posição física e financeira atual do armazém</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('reports.stock_report', format='csv') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-filetype-csv me-1"></i> Exportar CSV
+        </a>
+        <a href="{{ url_for('reports.stock_report', format='excel') }}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-earmark-excel me-1"></i> Exportar Excel
+        </a>
+        <a href="{{ url_for('reports.stock_report', format='pdf') }}" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-file-earmark-pdf me-1"></i> Exportar PDF
+        </a>
+        <a href="{{ url_for('reports.index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<div class="card card-table">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Produto</th>
+                    <th>Stock Atual</th>
+                    <th>Mínimo</th>
+                    <th>Preço Venda</th>
+                    {% if current_user.is_admin %}
+                    <th>Custo Médio</th>
+                    <th>Valorização (Custo)</th>
+                    {% endif %}
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td class="font-monospace fw-semibold">{{ p.sku }}</td>
+                    <td>{{ p.name }}</td>
+                    <td class="fw-bold">{{ p.stock_quantity | numero(0) }} {{ p.unit }}</td>
+                    <td>{{ p.minimum_stock | numero(0) }}</td>
+                    <td>{{ p.selling_price | moeda }}</td>
+                    {% if current_user.is_admin %}
+                    <td>{{ p.average_cost | moeda }}</td>
+                    <td class="fw-semibold">{{ (p.stock_quantity * p.average_cost) | moeda }}</td>
+                    {% endif %}
+                    <td>
+                        {% if p.is_out_of_stock %}
+                        <span class="badge bg-danger">Esgotado</span>
+                        {% elif p.is_below_minimum_stock %}
+                        <span class="badge bg-warning text-dark">Stock Baixo</span>
+                        {% else %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Normal</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

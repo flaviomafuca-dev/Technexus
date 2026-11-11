@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Serviços Técnicos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Catálogo de Serviços Técnicos</h4>
+        <p class="text-muted small mb-0">Manutenção de computadores, instalação de redes, câmaras e consultoria</p>
+    </div>
+    <a href="{{ url_for('services.create') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i> Novo Serviço
+    </a>
+</div>
+
+<div class="card card-table">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Nome do Serviço</th>
+                    <th>Categoria</th>
+                    <th>Preço de Referência</th>
+                    <th>Custo Estimado</th>
+                    <th>Tempo Médio</th>
+                    <th>Descrição</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in services %}
+                <tr>
+                    <td class="fw-semibold">{{ s.name }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ s.category.name if s.category else "Geral" }}</span></td>
+                    <td class="fw-bold text-primary">{{ s.reference_price | moeda }}</td>
+                    <td class="text-muted">{{ s.estimated_cost | moeda }}</td>
+                    <td>{{ s.estimated_hours }}h</td>
+                    <td class="small text-muted">{{ s.description or "—" }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="empty-state py-4">
+                        <i class="bi bi-wrench fs-1"></i>
+                        <p class="small text-muted mt-2">Nenhum serviço técnico cadastrado.</p>
+                        <a href="{{ url_for('services.create') }}" class="btn btn-primary btn-sm">Cadastrar Serviço</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

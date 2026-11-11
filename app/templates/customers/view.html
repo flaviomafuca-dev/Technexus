@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{{ customer.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">{{ customer.name }}</h4>
+        <p class="text-muted small mb-0">{{ "Empresa" if customer.customer_type == 'company' else "Pessoa Singular" }} &bull; NUIT: <strong>{{ customer.nuit or "Não especificado" }}</strong></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('customers.edit', customer_id=customer.id) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-pencil me-1"></i> Editar
+        </a>
+        <a href="{{ url_for('customers.index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Lista
+        </a>
+    </div>
+</div>
+
+<!-- Resumo do Cliente -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Dívida Total em Aberto</div>
+            <div class="kpi-value {% if total_debt > 0 %}text-danger{% else %}text-success{% endif %}">
+                {{ total_debt | moeda }}
+            </div>
+            <div class="kpi-meta text-muted">Vendas a crédito pendentes</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Total de Compras Efetuadas</div>
+            <div class="kpi-value text-primary">{{ sales | length }}</div>
+            <div class="kpi-meta text-muted">Operações comerciais</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Assistências Técnicas (OS)</div>
+            <div class="kpi-value text-info">{{ service_orders | length }}</div>
+            <div class="kpi-meta text-muted">Reparações de equipamentos</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Contratos Recorrentes</div>
+            <div class="kpi-value text-secondary">{{ contracts | length }}</div>
+            <div class="kpi-meta text-muted">Suporte e manutenção</div>
+        </div>
+    </div>
+</div>
+
+<!-- Dados de Contacto e Histórico de Vendas -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card card-table p-3 h-100">
+            <h6 class="fw-bold mb-3"><i class="bi bi-person-lines-fill text-primary me-2"></i> Contactos e Morada</h6>
+            <table class="table table-bordered small">
+                <tr><th>Telefone</th><td>{{ customer.phone or "—" }}</td></tr>
+                <tr><th>Telefone 2</th><td>{{ customer.phone2 or "—" }}</td></tr>
+                <tr><th>E-mail</th><td>{{ customer.email or "—" }}</td></tr>
+                <tr><th>Cidade</th><td>{{ customer.city or "—" }}</td></tr>
+                <tr><th>Endereço</th><td>{{ customer.address or "—" }}</td></tr>
+                <tr><th>Notas</th><td>{{ customer.notes or "Sem observações." }}</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card card-table p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0"><i class="bi bi-cart3 text-primary me-2"></i> Histórico de Vendas do Cliente</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Nº Venda</th>
+                            <th>Data</th>
+                            <th>Total</th>
+                            <th>Pago</th>
+                            <th>Pendente</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in sales %}
+                        <tr>
+                            <td><a href="{{ url_for('sales.view', sale_id=s.id) }}" class="fw-bold text-decoration-none">{{ s.sale_number }}</a></td>
+                            <td>{{ s.sale_date | data }}</td>
+                            <td class="fw-semibold">{{ s.total_amount | moeda }}</td>
+                            <td>{{ s.paid_amount | moeda }}</td>
+                            <td class="{% if s.pending_amount > 0 %}text-danger fw-bold{% endif %}">{{ s.pending_amount | moeda }}</td>
+                            <td>
+                                <span class="badge-status badge-{{ s.status }}">
+                                    {{ s.status | capitalize }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">Nenhuma venda registada para este cliente.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

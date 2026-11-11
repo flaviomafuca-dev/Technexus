@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}Venda {{ sale.sale_number }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Venda {{ sale.sale_number }}</h4>
+        <p class="text-muted small mb-0">Emitida em <strong>{{ sale.sale_date | data }}</strong> por <strong>{{ sale.registered_by_user.full_name }}</strong></p>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i> Imprimir Recibo
+        </button>
+        {% if sale.status in ('confirmed', 'partial') and sale.pending_amount > 0 %}
+        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#payModal">
+            <i class="bi bi-cash-coin me-1"></i> Registar Pagamento
+        </button>
+        {% endif %}
+        {% if sale.status != 'cancelled' %}
+        <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#cancelModal">
+            <i class="bi bi-x-circle me-1"></i> Cancelar Venda
+        </button>
+        {% endif %}
+        <a href="{{ url_for('sales.index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<!-- Cartões de Estado do Pagamento -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Valor Total da Venda</div>
+            <div class="kpi-value text-primary">{{ sale.total_amount | moeda }}</div>
+            <div class="kpi-meta text-muted">Subtotal com descontos</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Montante Liquidado</div>
+            <div class="kpi-value text-success">{{ sale.paid_amount | moeda }}</div>
+            <div class="kpi-meta text-muted">Efetivamente recebido</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Saldo Pendente</div>
+            <div class="kpi-value {% if sale.pending_amount > 0 %}text-danger{% else %}text-muted{% endif %}">
+                {{ sale.pending_amount | moeda }}
+            </div>
+            <div class="kpi-meta text-muted">
+                {% if sale.due_date %}Vence a {{ sale.due_date | data }}{% else %}A pronto{% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Estado da Operação</div>
+            <div class="mt-2">
+                <span class="badge-status badge-{{ sale.status }} fs-6">
+                    {% if sale.status == 'paid' %}Totalmente Liquidada{% elif sale.status == 'partial' %}Parcialmente Paga{% elif sale.status == 'confirmed' %}A Crédito (Pendente){% elif sale.status == 'cancelled' %}Cancelada{% else %}{{ sale.status }}{% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ficha de Venda / Recibo Formatado -->
+<div class="card card-table p-4 mb-4">
+    <div class="row mb-4">
+        <div class="col-6">
+            <h5 class="fw-bold text-primary mb-1">TechNexus</h5>
+            <small class="text-muted d-block">Soluções Informáticas & Assistência Técnica</small>
+            <small class="text-muted d-block">Maputo, Moçambique</small>
+        </div>
+        <div class="col-6 text-end">
+            <h6 class="fw-bold mb-1">Fatura / Recibo Interno</h6>
+            <div class="font-monospace fw-bold fs-6">{{ sale.sale_number }}</div>
+            <small class="text-muted">Data: {{ sale.sale_date | data }}</small>
+        </div>
+    </div>
+
+    <div class="p-3 bg-light rounded border mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <small class="text-muted text-uppercase fw-semibold">Dados do Cliente</small>
+                <div class="fw-bold text-dark mt-1">{{ sale.customer.name if sale.customer else "Consumidor Final (Balcão)" }}</div>
+                {% if sale.customer and sale.customer.nuit %}<small class="text-muted">NUIT: {{ sale.customer.nuit }}</small><br>{% endif %}
+                {% if sale.customer and sale.customer.phone %}<small class="text-muted">Contacto: {{ sale.customer.phone }}</small>{% endif %}
+            </div>
+            <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                <small class="text-muted text-uppercase fw-semibold">Condições de Pagamento</small>
+                <div class="fw-semibold text-dark mt-1">
+                    {% if sale.due_date %}A Crédito (Vencimento: {{ sale.due_date | data }}){% else %}Pronto Pagamento{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Itens -->
+    <h6 class="fw-bold mb-2">Artigos / Serviços Faturados</h6>
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered align-middle">
+            <thead class="bg-light">
+                <tr>
+                    <th>Designação</th>
+                    <th class="text-center" style="width: 15%;">Quantidade</th>
+                    <th class="text-end" style="width: 20%;">Preço Unit.</th>
+                    <th class="text-end" style="width: 20%;">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in sale.items %}
+                <tr>
+                    <td>
+                        <span class="fw-semibold">{{ item.description }}</span>
+                        {% if item.product %}<small class="text-muted d-block">SKU: {{ item.product.sku }}</small>{% endif %}
+                    </td>
+                    <td class="text-center">{{ item.quantity | numero(0) }}</td>
+                    <td class="text-end">{{ item.unit_price | moeda }}</td>
+                    <td class="text-end fw-bold">{{ item.line_total | moeda }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" class="text-end text-muted">Subtotal Bruto:</td>
+                    <td class="text-end fw-semibold">{{ sale.subtotal | moeda }}</td>
+                </tr>
+                {% if sale.discount_amount > 0 %}
+                <tr>
+                    <td colspan="3" class="text-end text-danger">Desconto Comercial:</td>
+                    <td class="text-end text-danger fw-semibold">- {{ sale.discount_amount | moeda }}</td>
+                </tr>
+                {% endif %}
+                <tr class="fs-6 table-active">
+                    <td colspan="3" class="text-end fw-bold text-dark">TOTAL LIQUIDAÇÃO:</td>
+                    <td class="text-end fw-bold text-primary">{{ sale.total_amount | moeda }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    {% if sale.notes %}
+    <div class="p-2 border rounded bg-light small text-muted">
+        <strong>Observações:</strong> {{ sale.notes }}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para Registar Pagamento Parcial/Total -->
+<div class="modal fade" id="payModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('sales.add_payment', sale_id=sale.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fs-6 fw-bold">Liquidar Saldo a Receber</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-3">Registe a entrada do valor recebido do cliente na conta financeira correspondente.</p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Valor do Pagamento (MT) *</label>
+                        <input type="number" step="0.01" min="0.01" max="{{ sale.pending_amount }}" class="form-control" name="amount" required value="{{ sale.pending_amount }}">
+                        <small class="text-muted">Saldo pendente atual: {{ sale.pending_amount | moeda }}</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Conta Financeira de Entrada *</label>
+                        <select name="account_id" class="form-select" required>
+                            {% for a in accounts %}
+                            <option value="{{ a.id }}">{{ a.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Método *</label>
+                        <select name="payment_method" class="form-select">
+                            <option value="cash">Dinheiro em Espécie (Caixa)</option>
+                            <option value="mpesa">M-Pesa</option>
+                            <option value="emola">e-Mola</option>
+                            <option value="bank_transfer">Transferência Bancária</option>
+                            <option value="pos">POS / Cartão</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Referência / Borderô</label>
+                        <input type="text" class="form-control" name="reference" placeholder="ex: Talão M-Pesa 84000000">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success btn-sm">Confirmar Pagamento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Cancelar Venda -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('sales.cancel', sale_id=sale.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fs-6 fw-bold text-danger">Cancelar Venda</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-danger">O cancelamento da venda devolverá automaticamente todos os artigos ao stock físico e estornará os pagamentos efetuados.</p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Motivo do Cancelamento *</label>
+                        <textarea class="form-control" name="cancellation_reason" rows="2" required placeholder="ex: Desistência do cliente, erro de faturamento..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Fechar</button>
+                    <button type="submit" class="btn btn-danger btn-sm">Confirmar Cancelamento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

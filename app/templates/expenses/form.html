@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Nova Despesa{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold mb-0 text-dark">Registar Despesa Operacional</h4>
+            <a href="{{ url_for('expenses.index') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Voltar
+            </a>
+        </div>
+
+        <div class="card card-table p-4">
+            <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Descrição da Despesa *</label>
+                    <input type="text" class="form-control" name="description" required placeholder="ex: Pagamento da Renda do Escritório - Mês Corrente">
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Categoria de Despesa *</label>
+                        <select name="category_id" class="form-select" required>
+                            <option value="">Selecione...</option>
+                            {% for c in categories %}
+                            <option value="{{ c.id }}">{{ c.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Valor da Despesa (MT) *</label>
+                        <input type="number" step="0.01" min="0.01" class="form-control" name="amount" required placeholder="0.00">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Data da Despesa *</label>
+                        <input type="date" class="form-control" name="expense_date" required value="{{ now().strftime('%Y-%m-%d') if now is defined else '' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Data de Vencimento</label>
+                        <input type="date" class="form-control" name="due_date">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Beneficiário / Entidade Receptora</label>
+                    <input type="text" class="form-control" name="beneficiary" placeholder="ex: Proprietário do Imóvel, EDM, Vodacom...">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Comprovativo / Recibo (Ficheiro PDF ou Imagem)</label>
+                    <input type="file" class="form-control" name="receipt" accept=".pdf,.png,.jpg,.jpeg">
+                </div>
+
+                {% if is_admin %}
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="is_confidential" name="is_confidential">
+                    <label class="form-check-label small fw-semibold" for="is_confidential">
+                        Despesa Confidencial (Oculta para Gerentes e Vendedores)
+                    </label>
+                </div>
+                {% endif %}
+
+                <div class="p-3 bg-light rounded border mb-3">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="is_paid" name="is_paid" onchange="toggleImmediatePay(this)">
+                        <label class="form-check-label small fw-semibold" for="is_paid">
+                            Liquidada Imediatamente (Já foi paga no acto)
+                        </label>
+                    </div>
+
+                    <div id="immediatePayFields" style="display: none;" class="mt-3 pt-2 border-top">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Conta de Saída</label>
+                                <select name="account_id" class="form-select form-select-sm">
+                                    {% for a in accounts %}
+                                    <option value="{{ a.id }}">{{ a.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Forma de Pagamento</label>
+                                <select name="payment_method" class="form-select form-select-sm">
+                                    <option value="cash">Caixa em Dinheiro</option>
+                                    <option value="bank_transfer">Transferência Bancária</option>
+                                    <option value="mpesa">M-Pesa</option>
+                                    <option value="emola">e-Mola</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                    <a href="{{ url_for('expenses.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check2 me-1"></i> Registar Despesa
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleImmediatePay(checkbox) {
+    document.getElementById('immediatePayFields').style.display = checkbox.checked ? 'block' : 'none';
+}
+</script>
+{% endblock %}

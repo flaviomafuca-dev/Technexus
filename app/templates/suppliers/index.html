@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Fornecedores{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Gestão de Fornecedores</h4>
+        <p class="text-muted small mb-0">Fornecedores de equipamentos, prazos de pagamento e contas a pagar</p>
+    </div>
+    <a href="{{ url_for('suppliers.create') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i> Novo Fornecedor
+    </a>
+</div>
+
+<!-- Filtro de Pesquisa -->
+<div class="card card-table p-3 mb-4">
+    <form method="GET" class="row g-2 align-items-center">
+        <div class="col-md-10">
+            <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" name="q" value="{{ q }}" placeholder="Pesquisar por nome, nome comercial, telefone ou NUIT...">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-secondary w-100"><i class="bi bi-filter me-1"></i> Pesquisar</button>
+        </div>
+    </form>
+</div>
+
+<!-- Tabela de Fornecedores -->
+<div class="card card-table">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Fornecedor / Razão Social</th>
+                    <th>Contacto</th>
+                    <th>NUIT</th>
+                    <th>Condições de Pagamento</th>
+                    <th>Dívida a Pagar</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in pagination.items %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('suppliers.view', supplier_id=s.id) }}" class="fw-semibold text-dark text-decoration-none">
+                            {{ s.name }}
+                        </a>
+                        {% if s.trade_name %}<small class="text-muted d-block">{{ s.trade_name }}</small>{% endif %}
+                    </td>
+                    <td>
+                        {{ s.phone or "—" }}
+                        {% if s.email %}<small class="text-muted d-block">{{ s.email }}</small>{% endif %}
+                    </td>
+                    <td>{{ s.nuit or "—" }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ s.payment_terms or "Pronto Pagamento" }}</span></td>
+                    <td>
+                        {% set debt = s.get_total_debt() %}
+                        {% if debt > 0 %}
+                        <span class="fw-bold text-danger">{{ debt | moeda }}</span>
+                        {% else %}
+                        <span class="text-success small fw-semibold"><i class="bi bi-check-circle"></i> Liquidado</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('suppliers.view', supplier_id=s.id) }}" class="btn btn-sm btn-outline-secondary" title="Ficha">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{{ url_for('suppliers.edit', supplier_id=s.id) }}" class="btn btn-sm btn-outline-primary" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="empty-state py-4">
+                        <i class="bi bi-truck fs-1"></i>
+                        <p class="small text-muted mt-2">Nenhum fornecedor encontrado.</p>
+                        <a href="{{ url_for('suppliers.create') }}" class="btn btn-primary btn-sm">Cadastrar Fornecedor</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <div class="p-3 border-top d-flex justify-content-between align-items-center">
+        <small class="text-muted">Página {{ pagination.page }} de {{ pagination.pages }}</small>
+        <ul class="pagination pagination-sm mb-0">
+            {% if pagination.has_prev %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('suppliers.index', page=pagination.prev_num, q=q) }}">&laquo;</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ pagination.page }}</span></li>
+            {% if pagination.has_next %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('suppliers.index', page=pagination.next_num, q=q) }}">&raquo;</a></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

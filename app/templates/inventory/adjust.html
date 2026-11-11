@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Ajuste Manual de Inventário{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold mb-0 text-dark">Ajuste de Contagem Física de Stock</h4>
+            <a href="{{ url_for('inventory.index') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Voltar
+            </a>
+        </div>
+
+        <div class="card card-table p-4">
+            <div class="alert alert-info small mb-4">
+                <i class="bi bi-info-circle me-1"></i> <strong>Instruções:</strong> Introduza a quantidade exata apurada na contagem física de armazém. O sistema calculará a diferença e gerará automaticamente o movimento de ajuste (positivo ou negativo) com registo de auditoria.
+            </div>
+
+            <form method="POST" action="{{ url_for('inventory.adjust') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Artigo / Produto a Ajustar *</label>
+                    <select name="product_id" id="product_select" class="form-select" required>
+                        <option value="">Selecione o artigo...</option>
+                        {% for p in products %}
+                        <option value="{{ p.id }}" data-current="{{ p.stock_quantity | int }}">
+                            {{ p.name }} (SKU: {{ p.sku }}) — Saldo Atual no Sistema: {{ p.stock_quantity | numero(0) }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Nova Quantidade Contada (Real) *</label>
+                    <input type="number" step="1" min="0" class="form-control" name="new_quantity" required placeholder="ex: 12">
+                    <small class="text-muted">A quantidade real encontrada no armazém</small>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-semibold">Motivo do Ajuste *</label>
+                    <textarea class="form-control" name="reason" rows="2" required placeholder="ex: Inventário físico trimestral, acerto de quebra não registada..."></textarea>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                    <a href="{{ url_for('inventory.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check2-circle me-1"></i> Confirmar Ajuste de Stock
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Contas a Pagar{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Contas a Pagar (Obrigações com Fornecedores)</h4>
+        <p class="text-muted small mb-0">Controlo de compras a fornecedores por liquidar e datas de vencimento</p>
+    </div>
+    <a href="{{ url_for('finance.index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Voltar às Finanças
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="kpi-card">
+            <div class="kpi-title">Total de Obrigações a Pagar</div>
+            <div class="kpi-value text-danger">{{ summary.total | moeda }}</div>
+            <div class="kpi-meta text-muted">Total devido a fornecedores</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="kpi-card">
+            <div class="kpi-title">Faturas Vencidas</div>
+            <div class="kpi-value text-danger">{{ summary.overdue | moeda }}</div>
+            <div class="kpi-meta text-danger">Data limite ultrapassada</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="kpi-card">
+            <div class="kpi-title">Faturas Dentro do Prazo</div>
+            <div class="kpi-value text-secondary">{{ summary.current | moeda }}</div>
+            <div class="kpi-meta text-muted">A liquidar nos prazos acordados</div>
+        </div>
+    </div>
+</div>
+
+<div class="card card-table">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Nº Compra</th>
+                    <th>Data Compra</th>
+                    <th>Vencimento</th>
+                    <th>Fornecedor</th>
+                    <th>Doc. Fornecedor</th>
+                    <th>Total Compra</th>
+                    <th>Pago</th>
+                    <th>Saldo Devido</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in pending_purchases %}
+                <tr class="{% if p.is_overdue %}table-danger-subtle{% endif %}">
+                    <td><a href="{{ url_for('purchases.view', purchase_id=p.id) }}" class="fw-bold text-decoration-none">{{ p.purchase_number }}</a></td>
+                    <td>{{ p.purchase_date | data }}</td>
+                    <td>
+                        {{ p.due_date | data if p.due_date else "Pronto Pagamento" }}
+                        {% if p.is_overdue %}<span class="badge bg-danger ms-1">Vencido</span>{% endif %}
+                    </td>
+                    <td class="fw-semibold">{{ p.supplier.name }}</td>
+                    <td>{{ p.supplier_document or "—" }}</td>
+                    <td>{{ p.total_amount | moeda }}</td>
+                    <td>{{ p.paid_amount | moeda }}</td>
+                    <td class="fw-bold text-danger">{{ p.pending_amount | moeda }}</td>
+                    <td class="text-end">
+                        <a href="{{ url_for('purchases.view', purchase_id=p.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-cash me-1"></i> Liquidar
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="empty-state py-4">
+                        <i class="bi bi-check-circle text-success fs-1"></i>
+                        <p class="small text-muted mt-2">Todas as compras a fornecedores encontram-se totalmente pagas.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

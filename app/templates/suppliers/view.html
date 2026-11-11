@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}{{ supplier.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">{{ supplier.name }}</h4>
+        <p class="text-muted small mb-0">NUIT: <strong>{{ supplier.nuit or "Não especificado" }}</strong> &bull; Condições: <strong>{{ supplier.payment_terms or "Pronto Pagamento" }}</strong></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('suppliers.edit', supplier_id=supplier.id) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-pencil me-1"></i> Editar
+        </a>
+        <a href="{{ url_for('suppliers.index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Lista
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-4">
+        <div class="kpi-card">
+            <div class="kpi-title">Dívida Atual ao Fornecedor</div>
+            <div class="kpi-value {% if total_debt > 0 %}text-danger{% else %}text-success{% endif %}">
+                {{ total_debt | moeda }}
+            </div>
+            <div class="kpi-meta text-muted">Faturas de compra por liquidar</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="kpi-card">
+            <div class="kpi-title">Total de Compras Efetuadas</div>
+            <div class="kpi-value text-primary">{{ purchases | length }}</div>
+            <div class="kpi-meta text-muted">Ordens de compra registadas</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="kpi-card">
+            <div class="kpi-title">Produtos Fornecidos</div>
+            <div class="kpi-value text-secondary">{{ products | length }}</div>
+            <div class="kpi-meta text-muted">Artigos associados no catálogo</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card card-table p-3 h-100">
+            <h6 class="fw-bold mb-3"><i class="bi bi-info-circle text-primary me-2"></i> Contactos</h6>
+            <table class="table table-bordered small">
+                <tr><th>Pessoa Contacto</th><td>{{ supplier.contact_person or "—" }}</td></tr>
+                <tr><th>Telefone</th><td>{{ supplier.phone or "—" }}</td></tr>
+                <tr><th>E-mail</th><td>{{ supplier.email or "—" }}</td></tr>
+                <tr><th>Endereço</th><td>{{ supplier.address or "—" }}</td></tr>
+                <tr><th>Notas</th><td>{{ supplier.notes or "Sem observações." }}</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card card-table p-3 h-100">
+            <h6 class="fw-bold mb-3"><i class="bi bi-bag-check text-primary me-2"></i> Histórico de Compras</h6>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Nº Compra</th>
+                            <th>Data</th>
+                            <th>Total</th>
+                            <th>Pago</th>
+                            <th>Pendente</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in purchases %}
+                        <tr>
+                            <td><a href="{{ url_for('purchases.view', purchase_id=p.id) }}" class="fw-bold text-decoration-none">{{ p.purchase_number }}</a></td>
+                            <td>{{ p.purchase_date | data }}</td>
+                            <td class="fw-semibold">{{ p.total_amount | moeda }}</td>
+                            <td>{{ p.paid_amount | moeda }}</td>
+                            <td class="{% if p.pending_amount > 0 %}text-danger fw-bold{% endif %}">{{ p.pending_amount | moeda }}</td>
+                            <td>
+                                <span class="badge-status badge-{{ p.status }}">
+                                    {{ p.status | capitalize }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">Nenhuma compra efetuada a este fornecedor.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

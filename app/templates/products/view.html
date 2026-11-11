@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">{{ product.name }}</h4>
+        <p class="text-muted small mb-0">SKU: <strong>{{ product.sku }}</strong> &bull; Categoria: <strong>{{ product.category.name if product.category else "Geral" }}</strong></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('products.edit', product_id=product.id) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-pencil me-1"></i> Editar
+        </a>
+        <a href="{{ url_for('products.index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Lista
+        </a>
+    </div>
+</div>
+
+<!-- Cartões de Resumo do Produto -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Stock Atual Físico</div>
+            <div class="kpi-value {% if product.is_out_of_stock %}text-danger{% elif product.is_below_minimum_stock %}text-warning{% else %}text-success{% endif %}">
+                {{ product.stock_quantity | numero(0) }} {{ product.unit }}
+            </div>
+            <div class="kpi-meta text-muted">Stock Mínimo: {{ product.minimum_stock | numero(0) }}</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Preço de Venda</div>
+            <div class="kpi-value text-primary">{{ product.selling_price | moeda }}</div>
+            <div class="kpi-meta text-muted">Preço final ao cliente</div>
+        </div>
+    </div>
+    {% if is_admin %}
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Custo Médio Ponderado</div>
+            <div class="kpi-value text-secondary">{{ product.average_cost | moeda }}</div>
+            <div class="kpi-meta text-muted">Última compra: {{ product.purchase_price | moeda }}</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-title">Margem Bruta Unitária</div>
+            <div class="kpi-value {% if product.gross_margin_percent and product.gross_margin_percent > 15 %}text-success{% else %}text-danger{% endif %}">
+                {{ product.gross_margin_percent | percentagem if product.gross_margin_percent is not none else '—' }}
+            </div>
+            <div class="kpi-meta text-muted">Lucro Unitário: {{ product.gross_profit_unit | moeda }}</div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Ficha de Detalhes e Números de Série -->
+<div class="row g-3 mb-4">
+    <div class="col-md-7">
+        <div class="card card-table p-3 h-100">
+            <h6 class="fw-bold mb-3"><i class="bi bi-info-circle text-primary me-2"></i> Especificações do Produto</h6>
+            <table class="table table-bordered small">
+                <tr><th style="width: 35%;">Marca</th><td>{{ product.brand.name if product.brand else "—" }}</td></tr>
+                <tr><th>Modelo</th><td>{{ product.model or "—" }}</td></tr>
+                <tr><th>Fornecedor Principal</th><td>{{ product.main_supplier.name if product.main_supplier else "—" }}</td></tr>
+                <tr><th>Controlo por Número de Série</th><td>{{ "Sim (Rastreado)" if product.has_serial_number else "Não" }}</td></tr>
+                <tr><th>Descrição / Detalhes</th><td>{{ product.description or "Sem descrição cadastrada." }}</td></tr>
+            </table>
+        </div>
+    </div>
+
+    {% if product.has_serial_number %}
+    <div class="col-md-5">
+        <div class="card card-table p-3 h-100">
+            <h6 class="fw-bold mb-3"><i class="bi bi-upc-scan text-primary me-2"></i> Unidades em Stock (Números de Série)</h6>
+            {% if serials %}
+            <div class="list-group list-group-flush" style="max-height: 220px; overflow-y: auto;">
+                {% for sn in serials %}
+                <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-0">
+                    <span class="font-monospace fw-semibold">{{ sn.serial_number }}</span>
+                    <span class="badge bg-success">Disponível</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state py-3">
+                <i class="bi bi-upc fs-2"></i>
+                <p class="small text-muted mb-0">Nenhum número de série atualmente disponível em stock.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Histórico de Movimentações de Stock do Produto -->
+<div class="card card-table p-3">
+    <h6 class="fw-bold mb-3"><i class="bi bi-clock-history text-primary me-2"></i> Histórico Recente de Movimentações</h6>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Tipo</th>
+                    <th>Qtd</th>
+                    <th>Saldo Anterior</th>
+                    <th>Novo Saldo</th>
+                    <th>Motivo / Referência</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in movements %}
+                <tr>
+                    <td>{{ m.created_at | data_hora }}</td>
+                    <td>
+                        <span class="badge-status badge-{{ m.movement_type }}">
+                            {{ m.movement_type | upper }}
+                        </span>
+                    </td>
+                    <td class="fw-bold">{{ m.quantity | numero(0) }}</td>
+                    <td>{{ m.stock_before | numero(0) }}</td>
+                    <td class="fw-bold">{{ m.stock_after | numero(0) }}</td>
+                    <td>{{ m.reason or "—" }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-3">Ainda não existem movimentações registadas para este produto.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

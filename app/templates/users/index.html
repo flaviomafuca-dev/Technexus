@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Utilizadores & Permissões{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Gestão de Utilizadores & Permissões</h4>
+        <p class="text-muted small mb-0">Perfis de acesso: Administrador (Acesso Total) e Gerente/Vendedor (Operacional)</p>
+    </div>
+    <a href="{{ url_for('users.create') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-person-plus me-1"></i> Novo Utilizador
+    </a>
+</div>
+
+<div class="card card-table">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Nome Completo</th>
+                    <th>Utilizador</th>
+                    <th>E-mail</th>
+                    <th>Perfil de Acesso</th>
+                    <th>Último Acesso</th>
+                    <th>Estado</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td class="fw-semibold">{{ u.full_name }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ u.username }}</span></td>
+                    <td>{{ u.email }}</td>
+                    <td>
+                        <span class="badge {% if u.is_admin %}bg-primary{% else %}bg-secondary{% endif %}">
+                            {{ "Administrador" if u.is_admin else "Gerente / Vendedor" }}
+                        </span>
+                    </td>
+                    <td class="small text-muted">{{ u.last_login | data_hora if u.last_login else "Nunca" }}</td>
+                    <td>
+                        <span class="badge {% if u.is_active %}bg-success-subtle text-success border border-success-subtle{% else %}bg-danger-subtle text-danger border border-danger-subtle{% endif %}">
+                            {{ "Ativo" if u.is_active else "Desativado" }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <form method="POST" action="{{ url_for('users.toggle_status', user_id=u.id) }}" class="d-inline" onsubmit="return confirm('Alterar estado da conta deste utilizador?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm {% if u.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" title="Ativar/Desativar">
+                                <i class="bi {% if u.is_active %}bi-person-x{% else %}bi-person-check{% endif %}"></i>
+                                {{ "Desativar" if u.is_active else "Ativar" }}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

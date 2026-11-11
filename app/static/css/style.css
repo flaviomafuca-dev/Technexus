@@ -1,0 +1,358 @@
+/* ============================================================
+   TechNexus — Sistema Inteligente de Gestão Empresarial
+   Folha de Estilos Corporativa (CSS)
+   ============================================================ */
+
+:root {
+    --primary-color: #1B365D;       /* Azul-escuro corporativo */
+    --primary-dark: #10223B;
+    --primary-light: #2A4D7E;
+    --accent-color: #0284C7;        /* Azul vibrante para foco e destaques */
+    --success-color: #10B981;       /* Verde discreto para indicadores positivos */
+    --danger-color: #EF4444;        /* Vermelho para alertas e erros */
+    --warning-color: #F59E0B;       /* Âmbar para avisos */
+    --info-color: #3B82F6;
+    
+    --bg-light: #F8FAFC;            /* Fundo suave da página */
+    --card-bg: #FFFFFF;             /* Cartões brancos */
+    --border-color: #E2E8F0;
+    --text-main: #1E293B;           /* Texto escuro principal */
+    --text-muted: #64748B;          /* Texto secundário */
+    
+    --sidebar-width: 260px;
+    --header-height: 64px;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-main);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+/* ==========================================
+   Estrutura do Layout (Sidebar & Main Content)
+   ========================================== */
+#wrapper {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    align-items: stretch;
+}
+
+/* Sidebar */
+#sidebar {
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
+    background-color: var(--primary-color);
+    color: #FFFFFF;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+#sidebar .sidebar-brand {
+    padding: 1.25rem 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
+    text-decoration: none;
+}
+
+#sidebar .sidebar-brand i {
+    font-size: 1.5rem;
+    margin-right: 0.75rem;
+    color: #38BDF8;
+}
+
+#sidebar .sidebar-menu {
+    list-style: none;
+    padding: 0.75rem 0;
+    margin: 0;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+#sidebar .sidebar-menu .menu-header {
+    padding: 0.75rem 1.5rem 0.25rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 600;
+}
+
+#sidebar .sidebar-menu li a {
+    padding: 0.65rem 1.5rem;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+}
+
+#sidebar .sidebar-menu li a i {
+    margin-right: 0.85rem;
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+
+#sidebar .sidebar-menu li a:hover,
+#sidebar .sidebar-menu li.active a {
+    color: #FFFFFF;
+    background-color: rgba(255, 255, 255, 0.08);
+    border-left-color: #38BDF8;
+}
+
+/* Área Principal */
+#content-wrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* Header / Top Navbar */
+.top-navbar {
+    height: var(--header-height);
+    background-color: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.top-navbar .toggle-sidebar-btn {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+/* User & Notification Controls */
+.top-navbar .nav-controls {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.top-navbar .user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: var(--text-main);
+}
+
+.top-navbar .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: var(--primary-light);
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Main Container */
+.main-content {
+    padding: 1.5rem;
+    flex-grow: 1;
+}
+
+/* ==========================================
+   Componentes Personalizados
+   ========================================== */
+
+/* Cartões de Indicador (KPI Cards) */
+.kpi-card {
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+    height: 100%;
+}
+
+.kpi-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.kpi-card .kpi-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.kpi-card .kpi-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 0.25rem;
+}
+
+.kpi-card .kpi-meta {
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Tabelas Corporativas */
+.card-table {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.card-table .table {
+    margin-bottom: 0;
+}
+
+.card-table .table th {
+    background-color: #F1F5F9;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    border-top: none;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.85rem 1rem;
+}
+
+.card-table .table td {
+    padding: 0.85rem 1rem;
+    vertical-align: middle;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Badges de Estado */
+.badge-status {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 4px;
+}
+
+.badge-confirmed, .badge-paid, .badge-completed, .badge-received {
+    background-color: #DCFCE7;
+    color: #15803D;
+}
+
+.badge-draft, .badge-diagnosing, .badge-waiting_approval {
+    background-color: #FEF3C7;
+    color: #B45309;
+}
+
+.badge-cancelled, .badge-overdue, .badge-stock-out {
+    background-color: #FEE2E2;
+    color: #B91C1C;
+}
+
+.badge-partial, .badge-in_progress, .badge-stock-low {
+    background-color: #E0F2FE;
+    color: #0369A1;
+}
+
+/* Estado Vazio Amigável */
+.empty-state {
+    padding: 3rem 1.5rem;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    color: #CBD5E1;
+    margin-bottom: 1rem;
+}
+
+.empty-state h5 {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+/* Chatbot TechNexus AI */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 160px);
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.chat-messages {
+    flex-grow: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.chat-bubble {
+    max-width: 80%;
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.chat-bubble.user {
+    align-self: flex-end;
+    background-color: var(--primary-color);
+    color: #FFFFFF;
+    border-bottom-right-radius: 2px;
+}
+
+.chat-bubble.assistant {
+    align-self: flex-start;
+    background-color: #F1F5F9;
+    color: var(--text-main);
+    border-bottom-left-radius: 2px;
+    border: 1px solid var(--border-color);
+}
+
+.chat-input-area {
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
+    background-color: #FFFFFF;
+}
+
+/* Responsividade Mobile */
+@media (max-width: 991.98px) {
+    #sidebar {
+        margin-left: calc(-1 * var(--sidebar-width));
+        position: fixed;
+        height: 100%;
+    }
+    #sidebar.active {
+        margin-left: 0;
+    }
+}

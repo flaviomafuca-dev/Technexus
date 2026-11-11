@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Novo Funcionário{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold mb-0 text-dark">Cadastrar Funcionário</h4>
+            <a href="{{ url_for('employees.index') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Voltar
+            </a>
+        </div>
+
+        <div class="card card-table p-4">
+            <form method="POST" action="{{ url_for('employees.create') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Nome Completo *</label>
+                    <input type="text" class="form-control" name="name" required placeholder="ex: Mateus Bila">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Cargo / Função *</label>
+                    <input type="text" class="form-control" name="role" required value="Técnico de Informática e Redes">
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Telefone *</label>
+                        <input type="text" class="form-control" name="phone" placeholder="ex: +258 84 000 0000">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">E-mail</label>
+                        <input type="email" class="form-control" name="email" placeholder="tecnico@technexus.co.mz">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Data de Admissão</label>
+                    <input type="date" class="form-control" name="hire_date">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Conta de Utilizador Associada (Opcional)</label>
+                    <select name="user_id" class="form-select">
+                        <option value="">Nenhuma conta associada...</option>
+                        {% for u in users %}
+                        <option value="{{ u.id }}">{{ u.full_name }} ({{ u.username }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-semibold">Observações</label>
+                    <textarea class="form-control" name="notes" rows="2" placeholder="Especialidades técnicas, certificações..."></textarea>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                    <a href="{{ url_for('employees.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check2 me-1"></i> Registar Funcionário
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Finanças & DRE Simplificada{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Gestão Financeira & Demonstração de Resultados (DRE)</h4>
+        <p class="text-muted small mb-0">Apuração de lucros reais, margens operacionais e ponto de equilíbrio &bull; Moeda: <strong>MZN (MT)</strong></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('finance.accounts_receivable') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-arrow-down-left me-1"></i> Contas a Receber
+        </a>
+        <a href="{{ url_for('finance.accounts_payable') }}" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-arrow-up-right me-1"></i> Contas a Pagar
+        </a>
+    </div>
+</div>
+
+<!-- Filtro de Período -->
+<div class="card card-table p-3 mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <span class="small text-muted">Período de Apuração: <strong>{{ start_date | data }}</strong> a <strong>{{ end_date | data }}</strong></span>
+        <div class="btn-group btn-group-sm">
+            <a href="{{ url_for('finance.index', period='today') }}" class="btn btn-outline-secondary {% if period == 'today' %}active{% endif %}">Hoje</a>
+            <a href="{{ url_for('finance.index', period='week') }}" class="btn btn-outline-secondary {% if period == 'week' %}active{% endif %}">7 Dias</a>
+            <a href="{{ url_for('finance.index', period='month') }}" class="btn btn-outline-secondary {% if period == 'month' %}active{% endif %}">Mês Atual</a>
+            <a href="{{ url_for('finance.index', period='last_month') }}" class="btn btn-outline-secondary {% if period == 'last_month' %}active{% endif %}">Mês Anterior</a>
+            <a href="{{ url_for('finance.index', period='year') }}" class="btn btn-outline-secondary {% if period == 'year' %}active{% endif %}">Este Ano</a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- DRE Simplificada -->
+    <div class="col-lg-7">
+        <div class="card card-table p-4 h-100">
+            <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                <i class="bi bi-calculator me-1"></i> Demonstração de Resultados Simplificada
+            </h6>
+            <table class="table table-bordered align-middle">
+                <tbody>
+                    <tr class="table-light">
+                        <td class="fw-bold">(+) Faturação de Vendas (Materiais Informáticos)</td>
+                        <td class="text-end fw-bold">{{ dre.revenue | moeda }}</td>
+                    </tr>
+                    <tr class="table-light">
+                        <td class="fw-bold">(+) Faturação de Serviços Técnicos</td>
+                        <td class="text-end fw-bold">{{ dre.service_revenue | moeda }}</td>
+                    </tr>
+                    <tr class="table-primary fw-bold">
+                        <td>(=) RECEITA TOTAL BRUTA RECONHECIDA</td>
+                        <td class="text-end fs-6 text-primary">{{ dre.total_revenue | moeda }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-danger ps-4">(-) Custo das Mercadorias Vendidas (CPV - Custo Médio Ponderado)</td>
+                        <td class="text-end text-danger">- {{ dre.cogs | moeda }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-danger ps-4">(-) Custos Diretos de Assistência Técnica (Peças + Mão de Obra)</td>
+                        <td class="text-end text-danger">- {{ dre.service_cost | moeda }}</td>
+                    </tr>
+                    <tr class="table-success fw-bold">
+                        <td>(=) LUCRO BRUTO</td>
+                        <td class="text-end fs-6 text-success">{{ dre.gross_profit | moeda }}</td>
+                    </tr>
+                    <tr class="small text-muted">
+                        <td class="ps-4">Margem Bruta Percentual</td>
+                        <td class="text-end fw-bold">{{ dre.gross_margin_percent | percentagem if dre.gross_margin_percent is not none else '0%' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-danger ps-4">(-) Despesas Operacionais (Renda, Salários, Energia, Internet...)</td>
+                        <td class="text-end text-danger">- {{ dre.operating_expenses | moeda }}</td>
+                    </tr>
+                    <tr class="{% if dre.operating_result >= 0 %}table-success{% else %}table-danger{% endif %} fw-bold fs-6">
+                        <td>(=) RESULTADO OPERACIONAL LÍQUIDO</td>
+                        <td class="text-end {% if dre.operating_result >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ dre.operating_result | moeda }}
+                        </td>
+                    </tr>
+                    <tr class="small text-muted">
+                        <td class="ps-4">Margem Operacional Líquida</td>
+                        <td class="text-end fw-bold">{{ dre.operating_margin_percent | percentagem if dre.operating_margin_percent is not none else '0%' }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Ponto de Equilíbrio & Despesas por Categoria -->
+    <div class="col-lg-5">
+        <!-- Ponto de Equilíbrio -->
+        <div class="card card-table p-4 mb-4">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                <i class="bi bi-bullseye text-primary me-1"></i> Análise do Ponto de Equilíbrio (Break-even)
+            </h6>
+            <p class="small text-muted mb-3">
+                Faturação mínima mensal necessária para cobrir todos os custos fixos sem prejuízo.
+            </p>
+            {% if break_even.break_even_revenue %}
+            <div class="p-3 bg-light rounded border text-center mb-3">
+                <small class="text-muted text-uppercase fw-semibold">Faturação Necessária (Ponto de Equilíbrio)</small>
+                <div class="fs-4 fw-bold text-primary mt-1">{{ break_even.break_even_revenue | moeda }}</div>
+                <small class="text-muted">Custos Fixos: {{ break_even.fixed_costs | moeda }} &bull; Margem: {{ break_even.gross_margin_percent | percentagem }}</small>
+            </div>
+            <div class="small text-muted" style="font-size: 0.75rem;">
+                <i class="bi bi-info-circle me-1"></i> {{ break_even.assumptions }}
+            </div>
+            {% else %}
+            <div class="alert alert-warning small mb-0">
+                {{ break_even.error or "Sem margem suficiente para cálculo." }}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Despesas Discriminadas -->
+        <div class="card card-table p-4">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                <i class="bi bi-pie-chart text-primary me-1"></i> Despesas por Categoria
+            </h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Categoria</th>
+                            <th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in expenses_by_cat %}
+                        <tr>
+                            <td>{{ c.category }}</td>
+                            <td class="text-end fw-semibold">{{ c.total | moeda }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="2" class="text-center text-muted small py-2">Nenhuma despesa registada no período.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

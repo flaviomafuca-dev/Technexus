@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Contratos de Manutenção{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Contratos Recorrentes de Suporte & Manutenção</h4>
+        <p class="text-muted small mb-0">Gestão de avenças mensais, suporte preventivo e renovações contratuais</p>
+    </div>
+    <a href="{{ url_for('contracts.create') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i> Novo Contrato
+    </a>
+</div>
+
+<div class="card card-table">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Nº Contrato</th>
+                    <th>Título / Objeto</th>
+                    <th>Cliente</th>
+                    <th>Valor</th>
+                    <th>Periodicidade</th>
+                    <th>Início</th>
+                    <th>Fim / Renovação</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in contracts %}
+                <tr>
+                    <td class="fw-bold font-monospace">{{ c.contract_number }}</td>
+                    <td class="fw-semibold">{{ c.title }}</td>
+                    <td>{{ c.customer.name }}</td>
+                    <td class="fw-bold text-primary">{{ c.value | moeda }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ c.frequency | capitalize }}</span></td>
+                    <td>{{ c.start_date | data }}</td>
+                    <td>
+                        {{ c.end_date | data if c.end_date else "Indeterminado" }}
+                        {% if c.is_near_expiry %}
+                        <span class="badge bg-warning text-dark ms-1">A expirar</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge-status badge-{{ c.status }}">
+                            {{ c.status | capitalize }}
+                        </span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="empty-state py-4">
+                        <i class="bi bi-file-earmark-check fs-1"></i>
+                        <p class="small text-muted mt-2">Nenhum contrato registado.</p>
+                        <a href="{{ url_for('contracts.create') }}" class="btn btn-primary btn-sm">Criar Primeiro Contrato</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

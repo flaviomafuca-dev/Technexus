@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Caixa & Contas Financeiras{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Caixa, Bancos & Fluxo de Tesouraria</h4>
+        <p class="text-muted small mb-0">Disponibilidades líquidas, contas bancárias, M-Pesa e transferências internas &bull; Moeda: <strong>MZN (MT)</strong></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('cashflow.transfer') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-arrow-left-right me-1"></i> Transferência Entre Contas
+        </a>
+        <a href="{{ url_for('cashflow.create_account') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> Nova Conta
+        </a>
+    </div>
+</div>
+
+<!-- Cartões de Saldo por Conta -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card" style="border-left: 4px solid #1B365D;">
+            <div class="kpi-title">Liquidez Total Disponível</div>
+            <div class="kpi-value text-primary">{{ total_liquidity | moeda }}</div>
+            <div class="kpi-meta text-muted">Soma de todas as contas</div>
+        </div>
+    </div>
+    {% for acc_info in accounts_data %}
+    <div class="col-sm-6 col-lg-3">
+        <div class="kpi-card" style="border-left: 4px solid {% if acc_info.account.account_type == 'cash' %}#10B981{% elif acc_info.account.account_type == 'mpesa' %}#EF4444{% else %}#0284C7{% endif %};">
+            <div class="kpi-title">{{ acc_info.account.name }}</div>
+            <div class="kpi-value {% if acc_info.current_balance >= 0 %}text-dark{% else %}text-danger{% endif %}">
+                {{ acc_info.current_balance | moeda }}
+            </div>
+            <div class="kpi-meta text-muted">{{ acc_info.account.account_type | upper }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Conciliação do Fluxo de Caixa no Período -->
+<div class="card card-table p-4 mb-4">
+    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+        <i class="bi bi-activity text-primary me-1"></i> Demonstração dos Fluxos de Caixa no Período (Base de Caixa)
+    </h6>
+    <div class="row text-center g-3">
+        <div class="col-md-3">
+            <div class="p-3 bg-light rounded border">
+                <small class="text-muted text-uppercase fw-semibold">Saldo Inicial</small>
+                <div class="fs-5 fw-bold text-dark mt-1">{{ flow.initial_balance | moeda }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 bg-light rounded border">
+                <small class="text-muted text-uppercase fw-semibold text-success">(+) Entradas Efetivas</small>
+                <div class="fs-5 fw-bold text-success mt-1">+ {{ flow.inflows | moeda }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 bg-light rounded border">
+                <small class="text-muted text-uppercase fw-semibold text-danger">(-) Saídas Efetivas</small>
+                <div class="fs-5 fw-bold text-danger mt-1">- {{ flow.outflows | moeda }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 bg-light rounded border">
+                <small class="text-muted text-uppercase fw-semibold text-primary">(=) Saldo Final</small>
+                <div class="fs-5 fw-bold text-primary mt-1">{{ flow.final_balance | moeda }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="small text-muted mt-2">
+        <i class="bi bi-shield-check text-success"></i> <em>Nota: Transferências internas entre contas próprias não alteram a liquidez total da empresa.</em>
+    </div>
+</div>
+
+<!-- Histórico de Movimentos Financeiros -->
+<div class="card card-table p-3">
+    <h6 class="fw-bold mb-3"><i class="bi bi-list-check text-primary me-2"></i> Movimentações Financeiras Recentes</h6>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Conta</th>
+                    <th>Tipo</th>
+                    <th>Descrição</th>
+                    <th>Categoria</th>
+                    <th class="text-end">Montante (MT)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in recent_movements %}
+                <tr>
+                    <td>{{ m.movement_date | data }}</td>
+                    <td class="fw-semibold">{{ m.account.name }}</td>
+                    <td>
+                        {% if m.is_transfer %}
+                        <span class="badge bg-secondary">Transferência</span>
+                        {% elif m.movement_type == 'in' %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Entrada</span>
+                        {% else %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Saída</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ m.description }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ m.category }}</span></td>
+                    <td class="text-end fw-bold {% if m.movement_type == 'in' %}text-success{% else %}text-danger{% endif %}">
+                        {{ "+" if m.movement_type == 'in' else "-" }} {{ m.amount | moeda }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-3">Nenhum movimento financeiro registado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

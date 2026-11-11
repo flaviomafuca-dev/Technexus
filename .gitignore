@@ -1,0 +1,125 @@
+# Ficheiro .gitignore para o projeto TechNexus
+# Exclui ficheiros sensíveis, temporários e desnecessários do controlo de versão
+
+# ==========================================
+# Variáveis de ambiente e credenciais
+# ==========================================
+.env
+.env.local
+.env.production
+*.env
+secrets.json
+credentials.json
+
+# ==========================================
+# Ambientes virtuais Python
+# ==========================================
+venv/
+.venv/
+env/
+.env/
+virtualenv/
+.virtualenv/
+ENV/
+env.bak/
+venv.bak/
+
+# ==========================================
+# Ficheiros compilados Python
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==========================================
+# Testes e cobertura
+# ==========================================
+.pytest_cache/
+.coverage
+coverage.xml
+*.cover
+*.py,cover
+htmlcov/
+.tox/
+.nox/
+nosetests.xml
+test-results/
+
+# ==========================================
+# Ferramentas de desenvolvimento
+# ==========================================
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+.ruff_cache/
+
+# ==========================================
+# IDEs e editores
+# ==========================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# Logs e ficheiros temporários
+# ==========================================
+*.log
+logs/
+*.tmp
+*.temp
+instance/
+
+# ==========================================
+# Backups e exportações
+# ==========================================
+backups/
+*.backup
+*.bak
+*.dump
+exports/temp/
+
+# ==========================================
+# Uploads de utilizadores (ficheiros privados)
+# ==========================================
+app/static/uploads/
+app/static/temp/
+
+# ==========================================
+# Base de dados local (apenas para testes)
+# ==========================================
+*.db
+*.sqlite
+*.sqlite3
+
+# ==========================================
+# Distribuição e empacotamento
+# ==========================================
+node_modules/
+.npm

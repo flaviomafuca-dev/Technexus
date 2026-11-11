@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Configurações & Backups{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h4 class="fw-bold mb-1 text-dark">Configurações Gerais da Empresa</h4>
+    <p class="text-muted small mb-0">Identificação corporativa, metas de reserva financeira e cópias de segurança</p>
+</div>
+
+<div class="row g-4">
+    <!-- Dados da Empresa -->
+    <div class="col-lg-7">
+        <div class="card card-table p-4">
+            <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                <i class="bi bi-building me-1"></i> Dados da Empresa & Localização
+            </h6>
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Nome da Empresa *</label>
+                    <input type="text" class="form-control" name="company_name" required value="{{ settings.company_name }}">
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Telefone Principal</label>
+                        <input type="text" class="form-control" name="company_phone" value="{{ settings.company_phone }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">E-mail Corporativo</label>
+                        <input type="email" class="form-control" name="company_email" value="{{ settings.company_email }}">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">NUIT</label>
+                        <input type="text" class="form-control" name="company_nuit" value="{{ settings.company_nuit }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Meta de Reserva para a Renda (MT)</label>
+                        <input type="number" step="0.01" min="0" class="form-control" name="rent_reserve_target" value="{{ settings.rent_reserve_target }}">
+                        <small class="text-muted">Valor a provisionar mensalmente para a renda</small>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-semibold">Endereço Principal</label>
+                    <input type="text" class="form-control" name="company_address" value="{{ settings.company_address }}">
+                </div>
+
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-check2 me-1"></i> Guardar Configurações
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Gestão de Backups e Cópias de Segurança -->
+    <div class="col-lg-5">
+        <div class="card card-table p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                <h6 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-shield-lock text-primary me-1"></i> Cópias de Segurança (Backups)
+                </h6>
+                <form method="POST" action="{{ url_for('settings.create_backup_action') }}" class="m-0">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-cloud-arrow-down me-1"></i> Criar Backup Agora
+                    </button>
+                </form>
+            </div>
+
+            <p class="small text-muted mb-3">
+                Os backups contêm a exportação estruturada e compactada (gzip) de todas as tabelas e dados da empresa, guardados em diretório protegido no servidor.
+            </p>
+
+            <h6 class="small fw-bold text-muted text-uppercase mb-2">Backups Recentes Disponíveis</h6>
+            <div class="list-group list-group-flush small" style="max-height: 240px; overflow-y: auto;">
+                {% for b in backups %}
+                <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                    <div>
+                        <div class="fw-semibold text-truncate" style="max-width: 220px;">{{ b.filename }}</div>
+                        <small class="text-muted">{{ b.created_at }} &bull; {{ b.size_kb }} KB</small>
+                    </div>
+                    <a href="{{ url_for('settings.download_backup', filename=b.filename) }}" class="btn btn-sm btn-outline-secondary" title="Descarregar Ficheiro">
+                        <i class="bi bi-download"></i>
+                    </a>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-3">Nenhum backup gerado até à data.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Parâmetros de Localização -->
+        <div class="card card-table p-4">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                <i class="bi bi-globe me-1"></i> Localização & Moeda
+            </h6>
+            <ul class="list-group list-group-flush small">
+                <li class="list-group-item px-0 d-flex justify-content-between">
+                    <span class="text-muted">Moeda Oficial:</span>
+                    <strong>Metical Moçambicano (MZN / MT)</strong>
+                </li>
+                <li class="list-group-item px-0 d-flex justify-content-between">
+                    <span class="text-muted">Fuso Horário:</span>
+                    <strong>Africa/Maputo (CAT - UTC+2)</strong>
+                </li>
+                <li class="list-group-item px-0 d-flex justify-content-between">
+                    <span class="text-muted">Idioma do Sistema:</span>
+                    <strong>Português (Moçambique)</strong>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

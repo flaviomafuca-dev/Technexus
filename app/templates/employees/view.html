@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Produtividade: {{ employee.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">{{ employee.name }}</h4>
+        <p class="text-muted small mb-0">{{ employee.role }} &bull; Contacto: <strong>{{ employee.phone or "Sem telefone" }}</strong></p>
+    </div>
+    <a href="{{ url_for('employees.index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Lista
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-4">
+        <div class="kpi-card">
+            <div class="kpi-title">Total de Ordens de Serviço</div>
+            <div class="kpi-value text-primary">{{ orders | length }}</div>
+            <div class="kpi-meta text-muted">Trabalhos atribuídos</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="kpi-card">
+            <div class="kpi-title">Serviços Concluídos / Entregues</div>
+            <div class="kpi-value text-success">{{ completed_count }}</div>
+            <div class="kpi-meta text-muted">Reparações finalizadas</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="kpi-card">
+            <div class="kpi-title">Serviços em Execução / Pendentes</div>
+            <div class="kpi-value text-warning">{{ pending_count }}</div>
+            <div class="kpi-meta text-muted">Atualmente em bancada</div>
+        </div>
+    </div>
+</div>
+
+<div class="card card-table p-3">
+    <h6 class="fw-bold mb-3"><i class="bi bi-tools text-primary me-2"></i> Histórico de Ordens de Serviço Atribuídas</h6>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Nº OS</th>
+                    <th>Data Entrada</th>
+                    <th>Cliente</th>
+                    <th>Equipamento</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for o in orders %}
+                <tr>
+                    <td><a href="{{ url_for('service_orders.view', order_id=o.id) }}" class="fw-bold text-decoration-none">{{ o.order_number }}</a></td>
+                    <td>{{ o.received_date | data }}</td>
+                    <td>{{ o.customer.name }}</td>
+                    <td>{{ o.equipment_type }} {{ o.equipment_brand }}</td>
+                    <td>
+                        <span class="badge-status badge-{{ o.status }}">
+                            {{ o.status | capitalize }}
+                        </span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-3">Nenhum serviço técnico atribuído até ao momento.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

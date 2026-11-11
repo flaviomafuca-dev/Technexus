@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block title %}Nova Venda (PDV){% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="fw-bold mb-0 text-dark">Ponto de Venda & Emissão de Venda</h4>
+        <p class="text-muted small mb-0">Selecione o cliente, adicione os produtos e confirme a modalidade de liquidação</p>
+    </div>
+    <a href="{{ url_for('sales.index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Voltar à Lista
+    </a>
+</div>
+
+<form method="POST" id="saleForm" action="{{ url_for('sales.create') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="row g-3">
+        <!-- Coluna da Esquerda: Produtos & Itens da Venda -->
+        <div class="col-lg-8">
+            <div class="card card-table p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-cart3 me-1"></i> Artigos da Venda</h6>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="addRowBtn">
+                        <i class="bi bi-plus-lg me-1"></i> Adicionar Artigo
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle" id="itemsTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th style="width: 50%;">Produto / Artigo</th>
+                                <th style="width: 20%;">Qtd</th>
+                                <th style="width: 25%;">Preço Unit. (MT)</th>
+                                <th style="width: 5%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsBody">
+                            <!-- Linha 1 padrão -->
+                            <tr class="item-row">
+                                <td>
+                                    <select name="product_id[]" class="form-select product-select" required onchange="updateRowPrice(this)">
+                                        <option value="">Selecione o artigo...</option>
+                                        {% for p in products %}
+                                        <option value="{{ p.id }}" data-price="{{ p.selling_price }}" data-stock="{{ p.stock_quantity | int }}">
+                                            {{ p.name }} (Stock: {{ p.stock_quantity | numero(0) }}) — {{ p.selling_price | moeda }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" step="1" min="1" name="quantity[]" class="form-control qty-input" value="1" required onchange="calculateTotals()">
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" min="0" name="unit_price[]" class="form-control price-input" value="0.00" required onchange="calculateTotals()">
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(this)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Notas Adicionais -->
+            <div class="card card-table p-3">
+                <label class="form-label small fw-semibold">Observações na Fatura / Recibo</label>
+                <textarea class="form-control" name="notes" rows="2" placeholder="Garantia dos equipamentos, condições especiais..."></textarea>
+            </div>
+        </div>
+
+        <!-- Coluna da Direita: Cliente, Modalidade e Totais -->
+        <div class="col-lg-4">
+            <div class="card card-table p-3 mb-3">
+                <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-person me-1"></i> Cliente & Faturação</h6>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Cliente</label>
+                    <select name="customer_id" class="form-select">
+                        <option value="">Consumidor Final (Balcão)</option>
+                        {% for c in customers %}
+                        <option value="{{ c.id }}">{{ c.name }}{% if c.trade_name %} ({{ c.trade_name }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Desconto Comercial (MT)</label>
+                    <input type="number" step="0.01" min="0" class="form-control" id="discountInput" name="discount_amount" value="0.00" onchange="calculateTotals()">
+                </div>
+
+                <!-- Resumo de Totais -->
+                <div class="p-3 bg-light rounded border mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Subtotal:</span>
+                        <span class="fw-bold" id="subtotalDisplay">0.00 MT</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-danger">
+                        <span class="small">Desconto:</span>
+                        <span class="fw-bold" id="discountDisplay">- 0.00 MT</span>
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between fs-5 fw-bold text-primary">
+                        <span>Total a Pagar:</span>
+                        <span id="totalDisplay">0.00 MT</span>
+                    </div>
+                </div>
+
+                <!-- Modalidade de Pagamento -->
+                <h6 class="fw-bold mb-2 text-dark">Modalidade de Liquidação</h6>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="is_credit" id="payNowRadio" value="0" checked onchange="togglePaymentSection(false)">
+                    <label class="form-check-label fw-semibold small" for="payNowRadio">
+                        Pronto Pagamento (Imediato)
+                    </label>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="is_credit" id="payCreditRadio" value="1" onchange="togglePaymentSection(true)">
+                    <label class="form-check-label fw-semibold small" for="payCreditRadio">
+                        Venda a Crédito / Pagamento Parcial
+                    </label>
+                </div>
+
+                <!-- Secção de Pagamento Imediato -->
+                <div id="payNowSection">
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold">Conta de Entrada *</label>
+                        <select name="account_id" class="form-select form-select-sm">
+                            {% for a in accounts %}
+                            <option value="{{ a.id }}">{{ a.name }} (Saldo: {{ a.get_current_balance() | moeda }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold">Método *</label>
+                        <select name="payment_method" class="form-select form-select-sm">
+                            <option value="cash">Dinheiro em Espécie (Caixa)</option>
+                            <option value="mpesa">M-Pesa</option>
+                            <option value="emola">e-Mola</option>
+                            <option value="bank_transfer">Transferência Bancária</option>
+                            <option value="pos">Cartão / POS</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Ref. / Talão M-Pesa</label>
+                        <input type="text" class="form-control form-control-sm" name="payment_reference" placeholder="ex: 84000000000">
+                    </div>
+                </div>
+
+                <!-- Secção de Crédito -->
+                <div id="creditSection" style="display: none;">
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold">Data Limite de Vencimento *</label>
+                        <input type="date" class="form-control form-control-sm" name="due_date">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold">Entrada Inicial Paga (MT)</label>
+                        <input type="number" step="0.01" min="0" class="form-control form-control-sm" name="down_payment" value="0.00" placeholder="0.00 se sem entrada">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold mt-2">
+                    <i class="bi bi-check-circle me-1"></i> Confirmar & Emitir Venda
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function updateRowPrice(selectEl) {
+    const opt = selectEl.options[selectEl.selectedIndex];
+    const price = opt.getAttribute('data-price') || '0.00';
+    const row = selectEl.closest('tr');
+    row.querySelector('.price-input').value = parseFloat(price).toFixed(2);
+    calculateTotals();
+}
+
+function calculateTotals() {
+    let subtotal = 0;
+    const rows = document.querySelectorAll('#itemsBody tr');
+    rows.forEach(r => {
+        const qty = parseFloat(r.querySelector('.qty-input').value) || 0;
+        const price = parseFloat(r.querySelector('.price-input').value) || 0;
+        subtotal += (qty * price);
+    });
+
+    const disc = parseFloat(document.getElementById('discountInput').value) || 0;
+    const total = Math.max(0, subtotal - disc);
+
+    document.getElementById('subtotalDisplay').textContent = subtotal.toLocaleString('pt-MZ', {minimumFractionDigits: 2}) + ' MT';
+    document.getElementById('discountDisplay').textContent = '- ' + disc.toLocaleString('pt-MZ', {minimumFractionDigits: 2}) + ' MT';
+    document.getElementById('totalDisplay').textContent = total.toLocaleString('pt-MZ', {minimumFractionDigits: 2}) + ' MT';
+}
+
+function removeRow(btn) {
+    const rows = document.querySelectorAll('#itemsBody tr');
+    if (rows.length > 1) {
+        btn.closest('tr').remove();
+        calculateTotals();
+    } else {
+        alert("A venda deve conter pelo menos um artigo.");
+    }
+}
+
+document.getElementById('addRowBtn').addEventListener('click', function () {
+    const firstRow = document.querySelector('#itemsBody tr');
+    const clone = firstRow.cloneNode(true);
+    clone.querySelector('.product-select').selectedIndex = 0;
+    clone.querySelector('.qty-input').value = 1;
+    clone.querySelector('.price-input').value = '0.00';
+    document.getElementById('itemsBody').appendChild(clone);
+});
+
+function togglePaymentSection(isCredit) {
+    document.getElementById('payNowSection').style.display = isCredit ? 'none' : 'block';
+    document.getElementById('creditSection').style.display = isCredit ? 'block' : 'none';
+}
+</script>
+{% endblock %}

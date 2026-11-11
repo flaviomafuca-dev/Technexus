@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar Cliente" if customer else "Novo Cliente" }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold mb-0 text-dark">{{ "Editar Cliente" if customer else "Novo Cliente" }}</h4>
+            <a href="{{ url_for('customers.index') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Voltar
+            </a>
+        </div>
+
+        <div class="card card-table p-4">
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Tipo de Cliente *</label>
+                        <select name="customer_type" class="form-select">
+                            <option value="individual" {% if customer and customer.customer_type == 'individual' %}selected{% endif %}>Pessoa Singular (Individual)</option>
+                            <option value="company" {% if customer and customer.customer_type == 'company' %}selected{% endif %}>Empresa / Entidade Coletiva</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">NUIT (Número Fiscal)</label>
+                        <input type="text" class="form-control" name="nuit" value="{{ customer.nuit if customer else '' }}" placeholder="ex: 400123456">
+                    </div>
+
+                    <div class="col-md-8">
+                        <label class="form-label small fw-semibold">Nome Completo / Razão Social *</label>
+                        <input type="text" class="form-control" name="name" required value="{{ customer.name if customer else '' }}" placeholder="ex: João Manuel ou Sociedade Comercial, Lda">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Nome Comercial</label>
+                        <input type="text" class="form-control" name="trade_name" value="{{ customer.trade_name if customer else '' }}" placeholder="ex: Maputo Tech">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Telefone Principal *</label>
+                        <input type="text" class="form-control" name="phone" value="{{ customer.phone if customer else '' }}" placeholder="ex: +258 84 123 4567">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Telefone Alternativo</label>
+                        <input type="text" class="form-control" name="phone2" value="{{ customer.phone2 if customer else '' }}" placeholder="ex: +258 82 987 6543">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">E-mail</label>
+                        <input type="email" class="form-control" name="email" value="{{ customer.email if customer else '' }}" placeholder="cliente@email.co.mz">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Cidade / Província</label>
+                        <input type="text" class="form-control" name="city" value="{{ customer.city if customer else 'Maputo' }}" placeholder="Maputo, Matola, Beira...">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Endereço Físico</label>
+                        <input type="text" class="form-control" name="address" value="{{ customer.address if customer else '' }}" placeholder="Avenida, Rua, Bairro, Nº...">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Limite de Crédito Permitido (MT)</label>
+                        <input type="number" step="0.01" min="0" class="form-control" name="credit_limit" value="{{ customer.credit_limit if customer else '0' }}">
+                        <small class="text-muted">Teto máximo para vendas a crédito (0 = sem limite estrito)</small>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Observações / Notas</label>
+                        <textarea class="form-control" name="notes" rows="2" placeholder="Informações adicionais do cliente...">{{ customer.notes if customer else '' }}</textarea>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                    <a href="{{ url_for('customers.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check2 me-1"></i> {{ "Guardar Alterações" if customer else "Registar Cliente" }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

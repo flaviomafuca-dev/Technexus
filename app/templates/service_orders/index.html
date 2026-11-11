@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Ordens de Serviço{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Ordens de Serviço & Assistência Técnica</h4>
+        <p class="text-muted small mb-0">Controlo de reparações, diagnóstico, atribuição de técnicos e peças consumidas</p>
+    </div>
+    <a href="{{ url_for('service_orders.create') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-tools me-1"></i> Abrir Ordem de Serviço
+    </a>
+</div>
+
+<!-- Filtros -->
+<div class="card card-table p-3 mb-4">
+    <form method="GET" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <select name="status" class="form-select">
+                <option value="">Todos os Estados</option>
+                <option value="received" {% if selected_status == 'received' %}selected{% endif %}>Recebido (Em Loja)</option>
+                <option value="diagnosing" {% if selected_status == 'diagnosing' %}selected{% endif %}>Em Diagnóstico</option>
+                <option value="waiting_approval" {% if selected_status == 'waiting_approval' %}selected{% endif %}>Aguardando Aprovação do Cliente</option>
+                <option value="waiting_parts" {% if selected_status == 'waiting_parts' %}selected{% endif %}>Aguardando Peças</option>
+                <option value="in_progress" {% if selected_status == 'in_progress' %}selected{% endif %}>Em Execução Técnica</option>
+                <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Concluído (Pronto)</option>
+                <option value="delivered" {% if selected_status == 'delivered' %}selected{% endif %}>Entregue ao Cliente</option>
+            </select>
+        </div>
+        <div class="col-md-5">
+            <select name="technician_id" class="form-select">
+                <option value="">Todos os Técnicos</option>
+                {% for t in technicians %}
+                <option value="{{ t.id }}" {% if selected_technician_id == t.id %}selected{% endif %}>{{ t.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-secondary w-100"><i class="bi bi-funnel me-1"></i> Filtrar</button>
+        </div>
+    </form>
+</div>
+
+<!-- Tabela de OS -->
+<div class="card card-table">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Nº OS</th>
+                    <th>Data Entrada</th>
+                    <th>Cliente</th>
+                    <th>Equipamento</th>
+                    <th>Técnico</th>
+                    <th>Preço Acordado</th>
+                    <th>Estado</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for o in pagination.items %}
+                <tr>
+                    <td><a href="{{ url_for('service_orders.view', order_id=o.id) }}" class="fw-bold text-decoration-none">{{ o.order_number }}</a></td>
+                    <td>{{ o.received_date | data }}</td>
+                    <td>{{ o.customer.name }}</td>
+                    <td>
+                        <span class="fw-semibold">{{ o.equipment_type or "Equipamento" }}</span>
+                        {% if o.equipment_model %}<small class="text-muted d-block">{{ o.equipment_brand }} {{ o.equipment_model }}</small>{% endif %}
+                    </td>
+                    <td>{{ o.technician.name if o.technician else "Não atribuído" }}</td>
+                    <td class="fw-bold">{{ o.agreed_price | moeda }}</td>
+                    <td>
+                        <span class="badge-status badge-{{ o.status }}">
+                            {{ o.status | capitalize }}
+                        </span>
+                        {% if o.is_overdue %}
+                        <span class="badge bg-danger small ms-1">Atrasada</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('service_orders.view', order_id=o.id) }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-eye"></i> Detalhes
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="empty-state py-4">
+                        <i class="bi bi-tools fs-1"></i>
+                        <p class="small text-muted mt-2">Nenhuma ordem de serviço registada.</p>
+                        <a href="{{ url_for('service_orders.create') }}" class="btn btn-primary btn-sm">Abrir Ordem de Serviço</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <div class="p-3 border-top d-flex justify-content-between align-items-center">
+        <small class="text-muted">Página {{ pagination.page }} de {{ pagination.pages }}</small>
+        <ul class="pagination pagination-sm mb-0">
+            {% if pagination.has_prev %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('service_orders.index', page=pagination.prev_num, status=selected_status, technician_id=selected_technician_id) }}">&laquo;</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ pagination.page }}</span></li>
+            {% if pagination.has_next %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('service_orders.index', page=pagination.next_num, status=selected_status, technician_id=selected_technician_id) }}">&raquo;</a></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

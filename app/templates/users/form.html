@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Novo Utilizador{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold mb-0 text-dark">Cadastrar Novo Utilizador</h4>
+            <a href="{{ url_for('users.index') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Voltar
+            </a>
+        </div>
+
+        <div class="card card-table p-4">
+            <form method="POST" action="{{ url_for('users.create') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Nome Completo *</label>
+                    <input type="text" class="form-control" name="full_name" required placeholder="ex: Ana Paula Macamo">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Nome de Utilizador (Username) *</label>
+                    <input type="text" class="form-control" name="username" required placeholder="ex: anapaula">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">E-mail Corporativo *</label>
+                    <input type="email" class="form-control" name="email" required placeholder="anapaula@technexus.co.mz">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Perfil de Permissões *</label>
+                    <select name="role" class="form-select" required>
+                        <option value="manager">Gerente / Vendedor (Acesso Operacional)</option>
+                        <option value="admin">Administrador (Acesso Total & Finanças)</option>
+                    </select>
+                    <small class="text-muted">
+                        Gerentes/Vendedores operam vendas, clientes e ordens de serviço, mas não têm acesso ao lucro global nem a configurações financeiras confidenciais.
+                    </small>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-semibold">Palavra-passe Inicial *</label>
+                    <input type="password" class="form-control" name="password" required placeholder="Mínimo de 6 caracteres">
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                    <a href="{{ url_for('users.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check2 me-1"></i> Criar Utilizador
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

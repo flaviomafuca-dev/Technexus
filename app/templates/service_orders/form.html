@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Abertura de Ordem de Serviço{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold mb-0 text-dark">Abertura de Ordem de Serviço (OS)</h4>
+            <a href="{{ url_for('service_orders.index') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Voltar à Lista
+            </a>
+        </div>
+
+        <div class="card card-table p-4">
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">Cliente & Atribuição Técnica</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Cliente Proprietário *</label>
+                        <select name="customer_id" class="form-select" required>
+                            <option value="">Selecione o cliente...</option>
+                            {% for c in customers %}
+                            <option value="{{ c.id }}">{{ c.name }} ({{ c.phone or "sem telefone" }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Técnico Responsável</label>
+                        <select name="technician_id" class="form-select">
+                            <option value="">A atribuir posteriormente...</option>
+                            {% for t in technicians %}
+                            <option value="{{ t.id }}">{{ t.name }} ({{ t.role }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Tipo de Serviço Pretendido</label>
+                        <select name="service_id" class="form-select">
+                            <option value="">Diagnóstico Geral / Reparação</option>
+                            {% for s in services %}
+                            <option value="{{ s.id }}">{{ s.name }} (Ref: {{ s.reference_price | moeda }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Previsão de Conclusão</label>
+                        <input type="date" class="form-control" name="estimated_completion_date">
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">Identificação do Equipamento</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Tipo de Equipamento</label>
+                        <input type="text" class="form-control" name="equipment_type" placeholder="ex: Portátil, Impressora, Desktop">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Marca</label>
+                        <input type="text" class="form-control" name="equipment_brand" placeholder="ex: HP, Epson, Dell">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Modelo</label>
+                        <input type="text" class="form-control" name="equipment_model" placeholder="ex: LaserJet M404n">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Nº de Série (S/N)</label>
+                        <input type="text" class="form-control" name="equipment_serial" placeholder="ex: CNB123456">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Avaria / Problema Reportado pelo Cliente *</label>
+                        <textarea class="form-control" name="problem_description" rows="3" required placeholder="Descreva os sintomas descritos pelo cliente (ex: Não liga, ecrã azul, atola papel, barulho na fonte)..."></textarea>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">Orçamento Inicial & Custos</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Preço Acordado com Cliente (MT)</label>
+                        <input type="number" step="0.01" min="0" class="form-control" name="agreed_price" value="0.00">
+                        <small class="text-muted">Pode ser atualizado após o diagnóstico</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Custo Estimado de Mão de Obra (MT)</label>
+                        <input type="number" step="0.01" min="0" class="form-control" name="labor_cost" value="0.00">
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                    <a href="{{ url_for('service_orders.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check2-circle me-1"></i> Abrir Ordem de Serviço
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
